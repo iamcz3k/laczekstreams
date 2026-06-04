@@ -62,79 +62,60 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.14 0.002 0);
-  --foreground: oklch(0.96 0.002 0);
-  --card: oklch(0.17 0.003 0);
-  --card-foreground: oklch(0.96 0.002 0);
-  --popover: oklch(0.17 0.003 0);
-  --popover-foreground: oklch(0.96 0.002 0);
-  --primary: oklch(0.96 0.002 0);
-  --primary-foreground: oklch(0.14 0.002 0);
-  --secondary: oklch(0.22 0.004 0);
-  --secondary-foreground: oklch(0.96 0.002 0);
-  --muted: oklch(0.2 0.003 0);
-  --muted-foreground: oklch(0.62 0.005 0);
-  --accent: oklch(0.72 0.18 35);
-  --accent-foreground: oklch(0.14 0.002 0);
-  --destructive: oklch(0.6 0.22 27);
-  --destructive-foreground: oklch(0.98 0.002 0);
-  --border: oklch(0.24 0.003 0);
-  --input: oklch(0.22 0.004 0);
-  --ring: oklch(0.72 0.18 35);
-  --chart-1: oklch(0.72 0.18 35);
-  --chart-2: oklch(0.6 0.118 184);
-  --chart-3: oklch(0.5 0.15 280);
-  --chart-4: oklch(0.7 0.18 145);
-  --chart-5: oklch(0.75 0.18 70);
-  --sidebar: oklch(0.14 0.002 0);
-  --sidebar-foreground: oklch(0.96 0.002 0);
-  --sidebar-primary: oklch(0.72 0.18 35);
-  --sidebar-primary-foreground: oklch(0.14 0.002 0);
-  --sidebar-accent: oklch(0.22 0.004 0);
-  --sidebar-accent-foreground: oklch(0.96 0.002 0);
-  --sidebar-border: oklch(0.24 0.003 0);
-  --sidebar-ring: oklch(0.72 0.18 35);
-
-  --gradient-ember: linear-gradient(135deg, oklch(0.72 0.18 35), oklch(0.6 0.22 15));
-  --gradient-matte: radial-gradient(ellipse at top, oklch(0.2 0.003 0), oklch(0.11 0.002 0) 70%);
-  --shadow-ember: 0 20px 60px -20px color-mix(in oklab, oklch(0.72 0.18 35) 35%, transparent);
+  --radius: 1rem;
+  /* LACZEK STREAM — matte black */
+  --background: oklch(0.13 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.17 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.15 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.78 0.18 55);
+  --primary-foreground: oklch(0.13 0 0);
+  --secondary: oklch(0.22 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.20 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.78 0.18 55);
+  --accent-foreground: oklch(0.13 0 0);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.22 0 0);
+  --ring: oklch(0.78 0.18 55);
+  --gradient-hero: linear-gradient(135deg, oklch(0.13 0 0) 0%, oklch(0.18 0.02 60) 100%);
+  --gradient-card: linear-gradient(160deg, oklch(0.18 0 0), oklch(0.14 0 0));
+  --shadow-glow: 0 10px 40px -10px oklch(0.78 0.18 55 / 0.35);
+  --shadow-card: 0 8px 30px -12px oklch(0 0 0 / 0.6);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+/* LACZEK STREAM uses a single permanent matte-black + orange theme.
+ * `.dark` and `.light` overrides are intentionally removed — any class set on
+ * <html> is a no-op so the design can never auto-switch. */
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+/* Best-effort: hide the injected "Edit with Lovable" badge on the published site
+ * for users who don't have Pro. The badge sits at the bottom-right corner. */
+a[href*="lovable.dev"][target="_blank"],
+iframe[src*="lovable.dev"][title*="Edit"],
+#lovable-badge,
+[data-lovable-badge] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
 @layer base {
@@ -145,5 +126,69 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 0%, oklch(0.78 0.18 55 / 0.18), transparent 60%),
+      radial-gradient(ellipse 70% 55% at 100% 100%, oklch(0.65 0.22 30 / 0.14), transparent 60%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  input,
+  select {
+    touch-action: manipulation;
   }
 }
+
+/* ===== Liquid glass utilities ===== */
+@utility glass {
+  background: color-mix(in oklab, var(--card) 55%, transparent);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid color-mix(in oklab, white 9%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, white 6%, transparent),
+    0 1px 0 0 color-mix(in oklab, black 40%, transparent);
+}
+
+@utility glass-card {
+  background:
+    linear-gradient(160deg,
+      color-mix(in oklab, white 4%, transparent),
+      color-mix(in oklab, var(--card) 70%, transparent));
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid color-mix(in oklab, white 8%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, white 5%, transparent),
+    0 8px 30px -12px oklch(0 0 0 / 0.6);
+}
+
+/* True fullscreen: kill any rounded corners, borders or padding so the iframe
+   fills the entire screen with no LACZEK STREAM chrome bleeding through. */
+:fullscreen, :-webkit-full-screen {
+  background: #000 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+:fullscreen iframe, :-webkit-full-screen iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+:fullscreen .glass, :-webkit-full-screen .glass { display: none !important; }
+
+/* Hide Google Translate banner / branding */
+.goog-te-banner-frame, .skiptranslate { display: none !important; }
+body { top: 0 !important; }
