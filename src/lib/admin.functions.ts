@@ -161,7 +161,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     const now = Date.now();
     const onlineWindowMs = 60_000; // active in last 60s
     const onlineNow = (sessions || []).filter(
-      (s) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
+      (s: any) => now - new Date(s.last_seen_at).getTime() < onlineWindowMs,
     ).length;
 
     // Aggregate
@@ -227,7 +227,7 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
 
     const totalVisits = (sessions || []).length;
     const avgDuration = totalVisits > 0
-      ? Math.round((sessions || []).reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalVisits)
+      ? Math.round((sessions || []).reduce((acc: number, s: any) => acc + (s.duration_seconds || 0), 0) / totalVisits)
       : 0;
 
     return {

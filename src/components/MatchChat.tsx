@@ -36,7 +36,7 @@ export function MatchChat({ matchId }: { matchId: string }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "match_chats", filter: `match_id=eq.${matchId}` },
-        (payload) => {
+        (payload: any) => {
           setMsgs((prev) => [...prev, payload.new as ChatMsg]);
         },
       )
