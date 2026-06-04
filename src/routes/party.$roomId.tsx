@@ -45,7 +45,7 @@ function PartyRoom() {
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
       setPresence(Object.keys(state).length || 1);
-    }).subscribe(async (status) => {
+    }).subscribe(async (status: any) => {
       if (status === "SUBSCRIBED") await ch.track({ at: Date.now() });
     });
     return () => { supabase.removeChannel(ch); };
