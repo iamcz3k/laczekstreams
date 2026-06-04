@@ -83,7 +83,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   if (openSession) return <SessionDetail s={openSession} onBack={() => setOpenSession(null)} onClose={onClose} />;
   // Drill-down: account detail
   if (openAccount) {
-    const userSessions = data.sessions.filter((s) => (s.name || "Anonymous") === openAccount);
+    const userSessions = data.sessions.filter((s: any) => (s.name || "Anonymous") === openAccount);
     return <AccountDetail name={openAccount} sessions={userSessions} onOpenSession={setOpenSession} onBack={() => setOpenAccount(null)} onClose={onClose} />;
   }
 
@@ -139,7 +139,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                   {list.length === 0 ? <Empty /> : (
                     <ul className="divide-y divide-border">
                       {list.map((w, i) => {
-                        const watchers = data.sessions.filter((s) => (Array.isArray(s.watched) ? s.watched as Array<{kind?:string; id?:string}> : []).some((x) => x.kind === kind && x.id === w.id));
+                        const watchers = data.sessions.filter((s: any) => (Array.isArray(s.watched) ? s.watched as Array<{kind?:string; id?:string}> : []).some((x) => x.kind === kind && x.id === w.id));
                         return (
                           <li key={i} className="py-2 text-sm">
                             <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                               <span className="font-bold text-primary">×{w.count}</span>
                             </div>
                             {watchers.length > 0 && (
-                              <p className="mt-1 text-xs text-muted-foreground">Watched by: {watchers.slice(0, 5).map((s) => s.name || "Anonymous").join(", ")}{watchers.length > 5 ? ` +${watchers.length - 5}` : ""}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">Watched by: {watchers.slice(0, 5).map((s: any) => s.name || "Anonymous").join(", ")}{watchers.length > 5 ? ` +${watchers.length - 5}` : ""}</p>
                             )}
                           </li>
                         );
@@ -174,7 +174,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "visitors" && (
           <div className="space-y-2">
-            {data.sessions.map((s) => {
+            {data.sessions.map((s: any) => {
               const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
               const link = streamLinkFromPath(s.current_path);
               return (
