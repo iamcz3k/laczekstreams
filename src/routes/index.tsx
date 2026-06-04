@@ -1,151 +1,262 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Film, Tv, Sparkles, Trophy, Radio, Headphones, Youtube, Camera, Cctv, Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, Sparkles } from "lucide-react";
+import { Header, type TabKey } from "@/components/Header";
+import { MoviesTab } from "@/components/MoviesTab";
+import { FeaturedBanner } from "@/components/FeaturedBanner";
+import { AnimeTab } from "@/components/AnimeTab";
+import { TVTab } from "@/components/TVTab";
+import { LiveSportsTab } from "@/components/LiveSportsTab";
+import { MusicTab } from "@/components/MusicTab";
+import { CctvTab } from "@/components/CctvTab";
+import { RadioTab } from "@/components/RadioTab";
+import { PodcastsTab } from "@/components/PodcastsTab";
+import { GenresTab } from "@/components/GenresTab";
+import { LibraryTab } from "@/components/LibraryTab";
+import { MediaCard } from "@/components/MediaCard";
+import { getContinueWatching, onLibraryChange, type LibraryEntry } from "@/lib/library";
+import { getPrefs, onPrefsChange } from "@/lib/preferences";
+import { OnboardingPopup } from "@/components/OnboardingPopup";
+import { LogoAnimation, type LogoAnimKind } from "@/components/LogoAnimation";
+import { tmdbPopular, type MediaItem } from "@/lib/api";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
+  component: Index,
   head: () => ({
     meta: [
-      { title: "LaCzek Stream — One hub for everything you watch" },
-      { name: "description", content: "A unified matte-black streaming interface for movies, series, anime, live sports, radio, podcasts, YouTube and live cameras." },
-      { property: "og:title", content: "LaCzek Stream" },
-      { property: "og:description", content: "One hub for movies, series, anime, sports, radio, podcasts and live streams." },
+      { title: "LACZEK STREAM — Free Movies, TV, Football & YouTube" },
+      { name: "description", content: "Stream free movies, live TV channels, football, YouTube and public CCTV cameras — clean matte-black player." },
     ],
   }),
-  component: Index,
 });
 
-const categories = [
-  { icon: Film, title: "Movies", desc: "Aggregated from multiple sources." },
-  { icon: Tv, title: "TV & Series", desc: "Seasons and episodes, structured." },
-  { icon: Sparkles, title: "Anime", desc: "Curated catalog with categories." },
-  { icon: Trophy, title: "Live Sports", desc: "Match streams when available." },
-  { icon: Radio, title: "Live TV", desc: "Public channel feeds." },
-  { icon: Headphones, title: "Radio", desc: "Stations across regions & genres." },
-  { icon: Play, title: "Podcasts", desc: "Stream directly in the interface." },
-  { icon: Youtube, title: "YouTube", desc: "Embedded videos & channels." },
-  { icon: Camera, title: "Live Cams", desc: "Public live camera feeds." },
-];
-
 function Index() {
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (typeof window === "undefined") return "movies";
+    return (getPrefs().defaultTab as TabKey | undefined) || "movies";
+  });
+  const [movieKind, setMovieKind] = useState<"movie" | "tv" | "anime">("movie");
+  const [librarySection, setLibrarySection] = useState<"continue" | "watchlist" | "history">("continue");
+  const [continueList, setContinueList] = useState<LibraryEntry[]>([]);
+  const [name, setName] = useState<string>(() => getPrefs().name || "");
+  const [recommended, setRecommended] = useState<MediaItem[]>([]);
+  const [logoAnim, setLogoAnim] = useState<LogoAnimKind | null>(null);
+
+  useEffect(() => {
+    const refresh = () => setContinueList(getContinueWatching().slice(0, 12));
+    refresh();
+    return onLibraryChange(refresh);
+  }, []);
+
+  useEffect(() => onPrefsChange((p) => setName(p.name || "")), []);
+
+  useEffect(() => {
+    tmdbPopular("movie", 2).then((items) => setRecommended(items.slice(0, 12))).catch(() => setRecommended([]));
+  }, []);
+
+  // Listen for brand-logo clicks to play the per-tab celebration animation.
+  useEffect(() => {
+    function handler() {
+      const kind: LogoAnimKind = (["movies", "football", "tv", "youtube", "cctv"] as TabKey[]).includes(tab)
+        ? (tab as LogoAnimKind)
+        : "default";
+      setLogoAnim(kind);
+    }
+    window.addEventListener("laczek:logo-click", handler);
+    return () => window.removeEventListener("laczek:logo-click", handler);
+  }, [tab]);
+
+  // Listen for navigation events from the 3-dots menu (continue/watchlist/history/genres).
+  useEffect(() => {
+    function handler(e: Event) {
+      const detail = (e as CustomEvent<{ tab: TabKey; section?: "continue" | "watchlist" | "history" }>).detail;
+      if (!detail?.tab) return;
+      if (detail.section) setLibrarySection(detail.section);
+      setTab(detail.tab);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    window.addEventListener("laczek:navigate-tab", handler as EventListener);
+    return () => window.removeEventListener("laczek:navigate-tab", handler as EventListener);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased">
-      {/* NAV */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <a href="/" className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-accent text-accent-foreground font-black">L</span>
-            <span className="text-sm font-semibold tracking-widest uppercase">LaCzek<span className="text-muted-foreground"> Stream</span></span>
-          </a>
-          <nav className="hidden gap-8 text-sm text-muted-foreground md:flex">
-            <a href="#features" className="hover:text-foreground transition">Features</a>
-            <a href="#catalog" className="hover:text-foreground transition">Catalog</a>
-            <a href="#stack" className="hover:text-foreground transition">Stack</a>
-          </nav>
-          <a href="#catalog" className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background hover:opacity-90 transition">
-            Launch app
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background text-foreground">
+      <OnboardingPopup onPickTab={(t) => setTab(t)} />
+      {logoAnim && <LogoAnimation kind={logoAnim} onDone={() => setLogoAnim(null)} />}
+      {/* BugReport moved to MoreMenu (Settings) */}
+      <Header active={tab} onChange={setTab} />
 
-      {/* HERO */}
-      <section className="relative overflow-hidden" style={{ background: "var(--gradient-matte)" }}>
-        <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "28px 28px" }} />
-        <div className="relative mx-auto max-w-7xl px-5 pt-20 pb-28 md:pt-32 md:pb-40">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Multi-source streaming hub
-          </div>
-          <h1 className="mt-6 max-w-4xl text-5xl font-black leading-[1.02] tracking-tight md:text-7xl lg:text-8xl">
-            One hub for<br/>
-            <span className="italic font-light text-muted-foreground">everything</span> you watch.
-          </h1>
-          <p className="mt-6 max-w-xl text-base text-muted-foreground md:text-lg">
-            LaCzek Stream aggregates movies, series, anime, live sports, radio, podcasts and YouTube into a single fast, matte-black interface.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <a href="#catalog" className="group inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-ember)] hover:translate-y-[-1px] transition">
-              <Play className="h-4 w-4 fill-current" /> Start streaming
-            </a>
-            <a href="#features" className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-6 py-3 text-sm font-medium hover:bg-card transition">
-              See features
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES STRIP */}
-      <section id="features" className="border-y border-border bg-card/40">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-border md:grid-cols-4 md:divide-x">
-          {[
-            ["9+", "Content categories"],
-            ["1", "Unified interface"],
-            ["0", "Installs required"],
-            ["∞", "Sources aggregated"],
-          ].map(([n, l]) => (
-            <div key={l} className="px-6 py-8">
-              <div className="text-4xl font-black tracking-tight">{n}</div>
-              <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{l}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CATALOG GRID */}
-      <section id="catalog" className="mx-auto max-w-7xl px-5 py-24 md:py-32">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-accent">Catalog</p>
-            <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Everything, organized.</h2>
-          </div>
-          <p className="hidden max-w-sm text-sm text-muted-foreground md:block">
-            Each category is a modular surface — lazy loaded, API-driven, mobile first.
-          </p>
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map(({ icon: Icon, title, desc }, i) => (
-            <article key={title}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40">
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/0 blur-2xl transition group-hover:bg-accent/20" />
-              <div className="relative flex items-start justify-between">
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-secondary text-foreground group-hover:bg-accent group-hover:text-accent-foreground transition">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-xs font-mono text-muted-foreground">0{i + 1}</span>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-6"><FeaturedBanner /></div>
+        {tab === "movies" && (
+          <section className="space-y-6">
+            <div className="flex items-end justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-3xl font-black tracking-tight">{movieKind === "movie" ? "Movies" : movieKind === "tv" ? "TV Shows" : "Anime"}</h2>
+                <p className="text-sm text-muted-foreground mt-1">Trending now · play instantly · no ads</p>
               </div>
-              <h3 className="relative mt-6 text-lg font-semibold">{title}</h3>
-              <p className="relative mt-1 text-sm text-muted-foreground">{desc}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+              <div className="inline-flex bg-secondary rounded-full p-1 border border-border shadow-[inset_0_1px_0_color-mix(in_oklab,white_7%,transparent)]">
+                {(["movie", "tv", "anime"] as const).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setMovieKind(k)}
+                    className={`px-5 py-2 rounded-full text-sm font-medium capitalize transition-all duration-300 ${
+                      movieKind === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {k === "movie" ? "Movies" : k === "tv" ? "Series" : "Anime"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {movieKind === "anime" ? <AnimeTab /> : <MoviesTab kind={movieKind} />}
+          </section>
+        )}
 
-      {/* STACK */}
-      <section id="stack" className="border-t border-border bg-card/30">
-        <div className="mx-auto max-w-7xl px-5 py-20">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Built with</p>
-          <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4 text-2xl font-semibold md:text-4xl">
-            {["TypeScript", "Vite", "Supabase", "Capacitor", "React"].map((t) => (
-              <span key={t} className="text-muted-foreground hover:text-foreground transition">{t}</span>
-            ))}
-          </div>
-        </div>
-      </section>
+        {tab === "movies" && movieKind === "movie" && recommended.length > 0 && (
+          <section className="mt-12 space-y-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight">
+                  <Sparkles className="h-5 w-5 text-primary" /> {name ? `${name}, you might like` : "Recommended for you"}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">Hand-picked popular picks</p>
+              </div>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+              {recommended.map((m) => (
+                <Link
+                  key={m.id}
+                  to="/watch/$kind/$id"
+                  params={{ kind: m.type, id: String(m.id) }}
+                  className="group w-40 shrink-0 sm:w-44 rounded-[20px] overflow-hidden glass-card hover:border-primary transition-all hover:-translate-y-1"
+                >
+                  <div className="aspect-[2/3] bg-muted overflow-hidden">
+                    {m.poster && <img src={m.poster} alt={m.title} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition" />}
+                  </div>
+                  <div className="p-2">
+                    <p className="truncate text-sm font-medium">{m.title}</p>
+                    {m.year && <p className="text-xs text-muted-foreground">{m.year}</p>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* CTA */}
-      <section className="mx-auto max-w-7xl px-5 py-24 md:py-32 text-center">
-        <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-tight md:text-6xl">
-          Less fragmentation.<br/>
-          <span className="text-muted-foreground italic font-light">More watching.</span>
-        </h2>
-        <a href="#catalog" className="mt-10 inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-ember)] hover:translate-y-[-1px] transition">
-          <Play className="h-4 w-4 fill-current" /> Open LaCzek Stream
-        </a>
-      </section>
+        {tab === "tv" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live TV` : "Live TV"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Thousands of free channels worldwide</p>
+            </div>
+            <TVTab />
+          </section>
+        )}
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-8 text-xs text-muted-foreground md:flex-row">
-          <span>© {new Date().getFullYear()} LaCzek Stream</span>
-          <span>Matte-black edition</span>
+        {tab === "football" && (
+          <section className="space-y-6">
+            <div>
+                <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live Sports` : "Live Sports"}</h2>
+                <p className="text-sm text-muted-foreground mt-1">Live scores & today's fixtures</p>
+            </div>
+            <LiveSportsTab />
+          </section>
+        )}
+
+        {tab === "youtube" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name} on YouTube` : "YouTube"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Stream songs, videos, creators and live streams</p>
+            </div>
+            <MusicTab />
+          </section>
+        )}
+
+        {tab === "cctv" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Live CCTV` : "Live CCTV"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Free public camera streams worldwide</p>
+            </div>
+            <CctvTab />
+          </section>
+        )}
+
+        {tab === "radio" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Radio` : "Radio Worldwide"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Thousands of free stations, anywhere</p>
+            </div>
+            <RadioTab />
+          </section>
+        )}
+
+        {tab === "podcasts" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">{name ? `${name}'s Podcasts` : "Podcasts"}</h2>
+              <p className="text-sm text-muted-foreground mt-1">Search, browse and play</p>
+            </div>
+            <PodcastsTab />
+          </section>
+        )}
+
+        {tab === "genres" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">Browse by Genre</h2>
+              <p className="text-sm text-muted-foreground mt-1">Action, Sci-Fi, Romance, Comedy and more</p>
+            </div>
+            <GenresTab />
+          </section>
+        )}
+
+        {tab === "library" && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight">My Library</h2>
+              <p className="text-sm text-muted-foreground mt-1">Continue watching · watchlist · history</p>
+            </div>
+            <LibraryTab initial={librarySection} />
+          </section>
+        )}
+
+        {/* Continue Watching strip — only on the Movies tab so it's discoverable but doesn't repeat everywhere */}
+        {tab === "movies" && continueList.length > 0 && (
+          <section className="mt-12 space-y-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h3 className="flex items-center gap-2 text-2xl font-black tracking-tight"><Clock className="h-5 w-5 text-primary" /> Continue Watching</h3>
+                <p className="text-sm text-muted-foreground mt-1">Pick up where you left off</p>
+              </div>
+              <button
+                onClick={() => {
+                  setLibrarySection("continue");
+                  setTab("library");
+                }}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                See all →
+              </button>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
+              {continueList.map((entry) => (
+                <div key={`${entry.kind}-${entry.id}-${entry.season ?? 0}-${entry.episode ?? 0}`} className="w-40 shrink-0 sm:w-44">
+                  <MediaCard entry={entry} showProgress />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="border-t border-border mt-16">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-muted-foreground">
+          © LACZEK STREAM · Built for entertainment
         </div>
       </footer>
     </div>

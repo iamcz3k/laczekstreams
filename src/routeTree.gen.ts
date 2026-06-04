@@ -9,38 +9,252 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SpeedtestRouteImport } from './routes/speedtest'
+import { Route as RadioRouteImport } from './routes/radio'
+import { Route as PodcastsRouteImport } from './routes/podcasts'
+import { Route as PartyRouteImport } from './routes/party'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PartyRoomIdRouteImport } from './routes/party.$roomId'
+import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
+import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
+import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
+import { Route as ApiPublicPodcastFeedRouteImport } from './routes/api.public.podcast-feed'
+import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
+import { Route as ApiPublicCctvCamerasRouteImport } from './routes/api.public.cctv-cameras'
+import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
+import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
+import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
 
+const SpeedtestRoute = SpeedtestRouteImport.update({
+  id: '/speedtest',
+  path: '/speedtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadioRoute = RadioRouteImport.update({
+  id: '/radio',
+  path: '/radio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PodcastsRoute = PodcastsRouteImport.update({
+  id: '/podcasts',
+  path: '/podcasts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartyRoute = PartyRouteImport.update({
+  id: '/party',
+  path: '/party',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartyRoomIdRoute = PartyRoomIdRouteImport.update({
+  id: '/$roomId',
+  path: '/$roomId',
+  getParentRoute: () => PartyRoute,
+} as any)
+const FootballStreamMatchIdRoute = FootballStreamMatchIdRouteImport.update({
+  id: '/football-stream/$matchId',
+  path: '/football-stream/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnimeAnimeIdRoute = AnimeAnimeIdRouteImport.update({
+  id: '/anime/$animeId',
+  path: '/anime/$animeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchKindIdRoute = WatchKindIdRouteImport.update({
+  id: '/watch/$kind/$id',
+  path: '/watch/$kind/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPodcastFeedRoute = ApiPublicPodcastFeedRouteImport.update({
+  id: '/api/public/podcast-feed',
+  path: '/api/public/podcast-feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFootballStreamsRoute =
+  ApiPublicFootballStreamsRouteImport.update({
+    id: '/api/public/football-streams',
+    path: '/api/public/football-streams',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCctvCamerasRoute = ApiPublicCctvCamerasRouteImport.update({
+  id: '/api/public/cctv-cameras',
+  path: '/api/public/cctv-cameras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeVideoRoute = ApiPublicAnimeVideoRouteImport.update({
+  id: '/api/public/anime-video',
+  path: '/api/public/anime-video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeProxyRoute = ApiPublicAnimeProxyRouteImport.update({
+  id: '/api/public/anime-proxy',
+  path: '/api/public/anime-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
+  id: '/api/public/anime-image',
+  path: '/api/public/anime-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/party': typeof PartyRouteWithChildren
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
+  '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
+  '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
+  '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/party': typeof PartyRouteWithChildren
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
+  '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
+  '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
+  '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/party': typeof PartyRouteWithChildren
+  '/podcasts': typeof PodcastsRoute
+  '/radio': typeof RadioRoute
+  '/speedtest': typeof SpeedtestRoute
+  '/anime/$animeId': typeof AnimeAnimeIdRoute
+  '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
+  '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
+  '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
+  '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
+  '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
+  '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
+  '/watch/$kind/$id': typeof WatchKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/party'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
+    | '/anime/$animeId'
+    | '/football-stream/$matchId'
+    | '/party/$roomId'
+    | '/api/public/anime-image'
+    | '/api/public/anime-proxy'
+    | '/api/public/anime-video'
+    | '/api/public/cctv-cameras'
+    | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
+    | '/watch/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/party'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
+    | '/anime/$animeId'
+    | '/football-stream/$matchId'
+    | '/party/$roomId'
+    | '/api/public/anime-image'
+    | '/api/public/anime-proxy'
+    | '/api/public/anime-video'
+    | '/api/public/cctv-cameras'
+    | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
+    | '/watch/$kind/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/party'
+    | '/podcasts'
+    | '/radio'
+    | '/speedtest'
+    | '/anime/$animeId'
+    | '/football-stream/$matchId'
+    | '/party/$roomId'
+    | '/api/public/anime-image'
+    | '/api/public/anime-proxy'
+    | '/api/public/anime-video'
+    | '/api/public/cctv-cameras'
+    | '/api/public/football-streams'
+    | '/api/public/podcast-feed'
+    | '/watch/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PartyRoute: typeof PartyRouteWithChildren
+  PodcastsRoute: typeof PodcastsRoute
+  RadioRoute: typeof RadioRoute
+  SpeedtestRoute: typeof SpeedtestRoute
+  AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
+  FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
+  ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
+  ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
+  ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
+  ApiPublicCctvCamerasRoute: typeof ApiPublicCctvCamerasRoute
+  ApiPublicFootballStreamsRoute: typeof ApiPublicFootballStreamsRoute
+  ApiPublicPodcastFeedRoute: typeof ApiPublicPodcastFeedRoute
+  WatchKindIdRoute: typeof WatchKindIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/speedtest': {
+      id: '/speedtest'
+      path: '/speedtest'
+      fullPath: '/speedtest'
+      preLoaderRoute: typeof SpeedtestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radio': {
+      id: '/radio'
+      path: '/radio'
+      fullPath: '/radio'
+      preLoaderRoute: typeof RadioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/podcasts': {
+      id: '/podcasts'
+      path: '/podcasts'
+      fullPath: '/podcasts'
+      preLoaderRoute: typeof PodcastsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/party': {
+      id: '/party'
+      path: '/party'
+      fullPath: '/party'
+      preLoaderRoute: typeof PartyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +262,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/party/$roomId': {
+      id: '/party/$roomId'
+      path: '/$roomId'
+      fullPath: '/party/$roomId'
+      preLoaderRoute: typeof PartyRoomIdRouteImport
+      parentRoute: typeof PartyRoute
+    }
+    '/football-stream/$matchId': {
+      id: '/football-stream/$matchId'
+      path: '/football-stream/$matchId'
+      fullPath: '/football-stream/$matchId'
+      preLoaderRoute: typeof FootballStreamMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/anime/$animeId': {
+      id: '/anime/$animeId'
+      path: '/anime/$animeId'
+      fullPath: '/anime/$animeId'
+      preLoaderRoute: typeof AnimeAnimeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watch/$kind/$id': {
+      id: '/watch/$kind/$id'
+      path: '/watch/$kind/$id'
+      fullPath: '/watch/$kind/$id'
+      preLoaderRoute: typeof WatchKindIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/podcast-feed': {
+      id: '/api/public/podcast-feed'
+      path: '/api/public/podcast-feed'
+      fullPath: '/api/public/podcast-feed'
+      preLoaderRoute: typeof ApiPublicPodcastFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/football-streams': {
+      id: '/api/public/football-streams'
+      path: '/api/public/football-streams'
+      fullPath: '/api/public/football-streams'
+      preLoaderRoute: typeof ApiPublicFootballStreamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cctv-cameras': {
+      id: '/api/public/cctv-cameras'
+      path: '/api/public/cctv-cameras'
+      fullPath: '/api/public/cctv-cameras'
+      preLoaderRoute: typeof ApiPublicCctvCamerasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-video': {
+      id: '/api/public/anime-video'
+      path: '/api/public/anime-video'
+      fullPath: '/api/public/anime-video'
+      preLoaderRoute: typeof ApiPublicAnimeVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-proxy': {
+      id: '/api/public/anime-proxy'
+      path: '/api/public/anime-proxy'
+      fullPath: '/api/public/anime-proxy'
+      preLoaderRoute: typeof ApiPublicAnimeProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/anime-image': {
+      id: '/api/public/anime-image'
+      path: '/api/public/anime-image'
+      fullPath: '/api/public/anime-image'
+      preLoaderRoute: typeof ApiPublicAnimeImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface PartyRouteChildren {
+  PartyRoomIdRoute: typeof PartyRoomIdRoute
+}
+
+const PartyRouteChildren: PartyRouteChildren = {
+  PartyRoomIdRoute: PartyRoomIdRoute,
+}
+
+const PartyRouteWithChildren = PartyRoute._addFileChildren(PartyRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PartyRoute: PartyRouteWithChildren,
+  PodcastsRoute: PodcastsRoute,
+  RadioRoute: RadioRoute,
+  SpeedtestRoute: SpeedtestRoute,
+  AnimeAnimeIdRoute: AnimeAnimeIdRoute,
+  FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
+  ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
+  ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
+  ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
+  ApiPublicCctvCamerasRoute: ApiPublicCctvCamerasRoute,
+  ApiPublicFootballStreamsRoute: ApiPublicFootballStreamsRoute,
+  ApiPublicPodcastFeedRoute: ApiPublicPodcastFeedRoute,
+  WatchKindIdRoute: WatchKindIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
