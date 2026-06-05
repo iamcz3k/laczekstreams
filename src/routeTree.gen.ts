@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnblockedMoviesRouteImport } from './routes/unblocked-movies'
 import { Route as SpeedtestRouteImport } from './routes/speedtest'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RadioRouteImport } from './routes/radio'
@@ -28,6 +29,11 @@ import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.ani
 import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
 import { Route as ApiPublicAdminStorageSignRouteImport } from './routes/api.public.admin-storage-sign'
 
+const UnblockedMoviesRoute = UnblockedMoviesRouteImport.update({
+  id: '/unblocked-movies',
+  path: '/unblocked-movies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpeedtestRoute = SpeedtestRouteImport.update({
   id: '/speedtest',
   path: '/speedtest',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/radio': typeof RadioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
+  '/unblocked-movies': typeof UnblockedMoviesRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/radio': typeof RadioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
+  '/unblocked-movies': typeof UnblockedMoviesRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/radio': typeof RadioRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
+  '/unblocked-movies': typeof UnblockedMoviesRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/radio'
     | '/sitemap.xml'
     | '/speedtest'
+    | '/unblocked-movies'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/radio'
     | '/sitemap.xml'
     | '/speedtest'
+    | '/unblocked-movies'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/radio'
     | '/sitemap.xml'
     | '/speedtest'
+    | '/unblocked-movies'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   RadioRoute: typeof RadioRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedtestRoute: typeof SpeedtestRoute
+  UnblockedMoviesRoute: typeof UnblockedMoviesRoute
   AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
   ApiPublicAdminStorageSignRoute: typeof ApiPublicAdminStorageSignRoute
@@ -267,6 +280,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unblocked-movies': {
+      id: '/unblocked-movies'
+      path: '/unblocked-movies'
+      fullPath: '/unblocked-movies'
+      preLoaderRoute: typeof UnblockedMoviesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/speedtest': {
       id: '/speedtest'
       path: '/speedtest'
@@ -414,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   RadioRoute: RadioRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedtestRoute: SpeedtestRoute,
+  UnblockedMoviesRoute: UnblockedMoviesRoute,
   AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
   ApiPublicAdminStorageSignRoute: ApiPublicAdminStorageSignRoute,
