@@ -209,7 +209,9 @@ export function DownloadsTab() {
       {Object.entries(groups).map(([label, list]) =>
         list.length === 0 ? null : (
           <section key={label}>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {label}
+            </h3>
             <ul className="space-y-2">
               {list.map((m) => {
                 const p = progressMap[m.id];
@@ -222,7 +224,11 @@ export function DownloadsTab() {
                   <li key={m.id} className="glass rounded-2xl p-3">
                     <div className="flex gap-3">
                       {m.poster_url ? (
-                        <img src={m.poster_url} alt="" className="h-20 w-14 flex-shrink-0 rounded-lg object-cover" />
+                        <img
+                          src={m.poster_url}
+                          alt=""
+                          className="h-20 w-14 flex-shrink-0 rounded-lg object-cover"
+                        />
                       ) : (
                         <div className="h-20 w-14 flex-shrink-0 rounded-lg bg-secondary" />
                       )}
@@ -245,7 +251,9 @@ export function DownloadsTab() {
                             {formatBytes(loaded)} / {formatBytes(total)}
                           </span>
                           <span>
-                            {status === "downloading" ? `${fmtSpeed(p?.speedBps ?? 0)} · ETA ${fmtEta(p?.etaSec ?? 0)}` : `${pct.toFixed(0)}%`}
+                            {status === "downloading"
+                              ? `${fmtSpeed(p?.speedBps ?? 0)} · ETA ${fmtEta(p?.etaSec ?? 0)}`
+                              : `${pct.toFixed(0)}%`}
                           </span>
                         </div>
                         {status === "failed" && m.error && (
@@ -256,17 +264,26 @@ export function DownloadsTab() {
 
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {status === "completed" && (
-                            <button onClick={() => playOffline(m.id)} className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground">
+                            <button
+                              onClick={() => playOffline(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
+                            >
                               <PlayCircle className="h-3.5 w-3.5" /> Play
                             </button>
                           )}
                           {(status === "downloading" || status === "queued") && (
-                            <button onClick={() => downloadEngine.pause(m.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                            <button
+                              onClick={() => downloadEngine.pause(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                            >
                               <Pause className="h-3.5 w-3.5" /> Pause
                             </button>
                           )}
                           {status === "paused" && (
-                            <button onClick={() => downloadEngine.resume(m.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                            <button
+                              onClick={() => downloadEngine.resume(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                            >
                               <Play className="h-3.5 w-3.5" /> Resume
                             </button>
                           )}
