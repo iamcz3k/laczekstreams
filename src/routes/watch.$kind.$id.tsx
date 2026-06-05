@@ -281,7 +281,7 @@ function WatchPage() {
         url: signed.url,
         poster: signed.poster_url || meta?.poster || null,
         size_bytes: signed.size_bytes,
-        status: result === "native" ? "completed" : "opened",
+        status: result === "native" ? "completed" : "started",
       });
       setConfirmOpen(false);
     } catch (error) {
