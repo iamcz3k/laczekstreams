@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FeatureFlag = { key: string; enabled: boolean; description?: string | null };
+export type TimerMode = "none" | "countdown" | "countup";
 export type FeaturedEvent = {
   id: string;
   title: string;
@@ -13,6 +14,13 @@ export type FeaturedEvent = {
   ends_at?: string | null;
   priority: number;
   active: boolean;
+  sport?: string | null;
+  home_team?: string | null;
+  away_team?: string | null;
+  home_flag?: string | null;
+  away_flag?: string | null;
+  timer_mode?: TimerMode | null;
+  timer_target_at?: string | null;
 };
 
 // Short TTL cache so flags propagate to all users within ~30s of an admin toggle.
