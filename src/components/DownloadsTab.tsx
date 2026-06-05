@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Pause, Play, RotateCcw, Trash2, X, PlayCircle, AlertCircle, Check, Loader2, CloudDownload } from "lucide-react";
+import { Pause, Play, RotateCcw, Trash2, X, PlayCircle, AlertCircle, Check, Loader2, CloudDownload, ExternalLink, Film } from "lucide-react";
 import { useDownloadsList } from "@/hooks/useDownloadsList";
 import { downloadEngine, onDownloadProgress } from "@/lib/downloads";
 import type { DownloadProgress, DownloadStatus } from "@/lib/downloads";
 import { StorageMeter, formatBytes } from "./StorageMeter";
 import { Progress } from "@/components/ui/progress";
+import { downloadHistory, type DownloadHistoryItem } from "@/lib/download-history";
 
 function fmtSpeed(bps: number) {
   return `${formatBytes(bps)}/s`;
@@ -28,6 +29,7 @@ const STATUS_LABEL: Record<DownloadStatus, { label: string; tone: string }> = {
 export function DownloadsTab() {
   const items = useDownloadsList();
   const [progressMap, setProgressMap] = useState<Record<string, DownloadProgress>>({});
+  const [history, setHistory] = useState<DownloadHistoryItem[]>([]);
 
   useEffect(
     () =>
@@ -36,6 +38,18 @@ export function DownloadsTab() {
       }),
     [],
   );
+
+  useEffect(() => {
+    const refresh = () => setHistory(downloadHistory.list());
+    refresh();
+    const onChange = () => refresh();
+    window.addEventListener("laczek:download-history-change", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("laczek:download-history-change", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
 
   const playOffline = async (id: string) => {
     const url = await downloadEngine.getOfflineUrl(id);
@@ -65,11 +79,54 @@ export function DownloadsTab() {
     <div className="space-y-5">
       <StorageMeter />
 
-      {items.length === 0 && (
+      {history.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent downloads</h3>
+            <button onClick={() => downloadHistory.clear()} className="text-[11px] font-semibold text-muted-foreground hover:text-destructive">Clear</button>
+          </div>
+          <ul className="space-y-2">
+            {history.map((h) => (
+              <li key={h.id} className="glass flex items-center gap-3 rounded-2xl p-3">
+                {h.poster ? (
+                  <img src={h.poster} alt="" className="h-16 w-12 flex-shrink-0 rounded-lg object-cover" />
+                ) : (
+                  <div className="flex h-16 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-secondary">
+                    <Film className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{h.title}</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {h.kind}
+                    {h.season ? ` · S${h.season}` : ""}
+                    {h.episode ? `E${h.episode}` : ""}
+                    {" · "}
+                    {new Date(h.created_at).toLocaleDateString()}
+                  </p>
+                  <p className={`mt-0.5 text-[11px] font-semibold ${h.status === "failed" ? "text-destructive" : "text-emerald-400"}`}>
+                    {h.status === "completed" ? "Saved to device" : h.status === "opened" ? "Opened in browser" : "Failed"}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <a href={h.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                    <ExternalLink className="h-3 w-3" /> Open
+                  </a>
+                  <button onClick={() => downloadHistory.remove(h.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                    <Trash2 className="h-3 w-3" /> Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {items.length === 0 && history.length === 0 && (
         <div className="py-16 text-center text-muted-foreground">
           <CloudDownload className="mx-auto mb-3 h-10 w-10 opacity-50" />
           <p className="text-sm">No downloads yet</p>
-          <p className="mt-1 text-xs">Tap the download button on any downloadable title.</p>
+          <p className="mt-1 text-xs">Tap the download button on any title.</p>
         </div>
       )}
 
