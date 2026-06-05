@@ -26,9 +26,10 @@ export const startVisit = createServerFn({ method: "POST" })
         { onConflict: "session_key" },
       )
       .select("id")
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { id: row.id };
+    if (!row) return { id: null as string | null };
+    return { id: (row as { id: string }).id };
   });
 
 const beatSchema = z.object({
