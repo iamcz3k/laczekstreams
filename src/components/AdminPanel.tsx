@@ -498,8 +498,8 @@ function ConfigPanel({ password }: { password: string }) {
 
 
       {editing && (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/85 p-4" onClick={() => setEditing(null)}>
-          <div onClick={(ev) => ev.stopPropagation()} className="w-full max-w-md space-y-3 rounded-3xl border border-border bg-popover p-5">
+        <div className="fixed inset-0 z-[95] flex items-start justify-center bg-black/85 p-4 overflow-y-auto" onClick={() => setEditing(null)}>
+          <div onClick={(ev) => ev.stopPropagation()} className="w-full max-w-md max-h-[85vh] space-y-3 overflow-y-auto rounded-3xl border border-border bg-popover p-5 my-auto">
             <h3 className="text-base font-bold">{editing.id ? "Edit event" : "New event"}</h3>
             <input value={editing.title || ""} onChange={(ev) => setEditing({ ...editing, title: ev.target.value })} placeholder="Title *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
             <input value={editing.subtitle || ""} onChange={(ev) => setEditing({ ...editing, subtitle: ev.target.value })} placeholder="Subtitle" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
