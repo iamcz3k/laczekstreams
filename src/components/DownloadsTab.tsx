@@ -105,12 +105,13 @@ export function DownloadsTab() {
                     {new Date(h.created_at).toLocaleDateString()}
                   </p>
                   <p className={`mt-0.5 text-[11px] font-semibold ${h.status === "failed" ? "text-destructive" : "text-emerald-400"}`}>
-                    {h.status === "completed" ? "Saved to device" : h.status === "opened" ? "Opened in browser" : "Failed"}
+                    {h.status === "completed" ? "Saved to device" : h.status === "started" ? "Started in browser" : h.status === "opened" ? "Opened in browser" : "Failed"}
                   </p>
+                  {h.size_bytes ? <p className="mt-0.5 text-[11px] text-muted-foreground">{formatBytes(h.size_bytes)}</p> : null}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <a href={h.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
-                    <ExternalLink className="h-3 w-3" /> Open
+                  <a href={h.url} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                    <ExternalLink className="h-3 w-3" /> Download
                   </a>
                   <button onClick={() => downloadHistory.remove(h.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
                     <Trash2 className="h-3 w-3" /> Remove
