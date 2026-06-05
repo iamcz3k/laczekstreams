@@ -19,6 +19,7 @@ import { trackWatch } from "@/lib/tracker";
 import { TitleDetails } from "@/components/TitleDetails";
 import { downloadToDevice } from "@/lib/native-download";
 import { downloadHistory } from "@/lib/download-history";
+import { getBrowserDownloadUrl } from "@/lib/downloads.functions";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -242,15 +243,9 @@ function WatchPage() {
     setSaved(inList);
   }
 
-  // One-tap download. Uses a reliable public mirror that resolves the TMDB id
-  // to a direct MP4 (Capacitor writes to Downloads folder, web triggers Save).
-  const downloadUrl = useMemo(() => {
-    if (mediaKind === "movie") return `https://dl.vidsrc.vip/movie/${mediaId}`;
-    return `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}`;
-  }, [mediaKind, mediaId, season, episode]);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const safeFilename = useMemo(() => {
     const base = (meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_");
@@ -258,37 +253,52 @@ function WatchPage() {
   }, [meta?.title, mediaKind, season, episode]);
 
   function handleDownload() {
+    setDownloadError(null);
     setConfirmOpen(true);
   }
 
   async function confirmDownload() {
     setDownloading(true);
+    setDownloadError(null);
     try {
-      const result = await downloadToDevice(downloadUrl, safeFilename);
+      const signed = await getBrowserDownloadUrl({
+        data: {
+          kind: mediaKind,
+          tmdb_id: String(mediaId),
+          season: mediaKind === "tv" ? season : undefined,
+          episode: mediaKind === "tv" ? episode : undefined,
+          filename: safeFilename,
+        },
+      });
+      const result = await downloadToDevice(signed.url, safeFilename);
       downloadHistory.add({
-        title: meta?.title || safeFilename,
+        id: signed.title_id,
+        title: signed.title || meta?.title || safeFilename,
         kind: mediaKind === "tv" ? "tv" : "movie",
         season: mediaKind === "tv" ? season : undefined,
         episode: mediaKind === "tv" ? episode : undefined,
         filename: safeFilename,
-        url: downloadUrl,
-        poster: meta?.poster ?? null,
+        url: signed.url,
+        poster: signed.poster_url || meta?.poster || null,
+        size_bytes: signed.size_bytes,
         status: result === "native" ? "completed" : "opened",
       });
-    } catch {
+      setConfirmOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Download could not start";
+      setDownloadError(message);
       downloadHistory.add({
         title: meta?.title || safeFilename,
         kind: mediaKind === "tv" ? "tv" : "movie",
         season: mediaKind === "tv" ? season : undefined,
         episode: mediaKind === "tv" ? episode : undefined,
         filename: safeFilename,
-        url: downloadUrl,
+        url: window.location.href,
         poster: meta?.poster ?? null,
         status: "failed",
       });
     } finally {
       setDownloading(false);
-      setConfirmOpen(false);
     }
   }
 
