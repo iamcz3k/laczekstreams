@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Calendar, Clock, Loader2, Star, User } from "lucide-react";
 import { tmdbTitleFull, type TitleFullDetail } from "@/lib/api";
-import { DownloadButton } from "@/components/DownloadButton";
-import { listDownloadableTitles } from "@/lib/downloads.functions";
 
 function formatRuntime(min?: number) {
   if (!min || min <= 0) return null;
@@ -53,10 +51,6 @@ export function TitleDetails({ kind, id }: { kind: "movie" | "tv"; id: number })
         )}
 
         {data.overview && <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{data.overview}</p>}
-
-        <div className="mt-4">
-          <DownloadIfAvailable kind={kind} tmdbId={id} title={data.title} poster={data.poster} />
-        </div>
 
         <dl className="mt-4 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
           {data.directors.length > 0 && <CrewRow label={kind === "tv" ? "Created by" : "Director"} names={data.directors} />}
@@ -108,33 +102,5 @@ function CrewRow({ label, names }: { label: string; names: string[] }) {
       <dt className="font-black uppercase tracking-wider text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 font-bold text-foreground">{names.join(", ")}</dd>
     </div>
-  );
-}
-
-function DownloadIfAvailable({ kind, tmdbId, title, poster }: { kind: "movie" | "tv"; tmdbId: number; title: string; poster?: string | null }) {
-  const [match, setMatch] = useState<any | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    listDownloadableTitles({ data: { kind, tmdb_id: String(tmdbId) } })
-      .then((r) => { if (!cancelled) setMatch(r.titles?.[0] ?? null); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [kind, tmdbId]);
-  if (!match) return null;
-  return (
-    <DownloadButton
-      titleId={match.id}
-      prepare={async () => ({
-        id: match.id,
-        title: match.title || title,
-        kind: match.kind,
-        season: match.season,
-        episode: match.episode,
-        poster_url: match.poster_url || poster || null,
-        storage_path: match.storage_path,
-        size_bytes: match.size_bytes || 0,
-        mime: match.mime || "video/mp4",
-      })}
-    />
   );
 }

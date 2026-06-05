@@ -19,6 +19,7 @@ import { trackWatch } from "@/lib/tracker";
 import { TitleDetails } from "@/components/TitleDetails";
 import { downloadToDevice } from "@/lib/native-download";
 import { downloadHistory } from "@/lib/download-history";
+import { getBrowserDownloadUrl } from "@/lib/downloads.functions";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -242,15 +243,9 @@ function WatchPage() {
     setSaved(inList);
   }
 
-  // One-tap download. Uses a reliable public mirror that resolves the TMDB id
-  // to a direct MP4 (Capacitor writes to Downloads folder, web triggers Save).
-  const downloadUrl = useMemo(() => {
-    if (mediaKind === "movie") return `https://dl.vidsrc.vip/movie/${mediaId}`;
-    return `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}`;
-  }, [mediaKind, mediaId, season, episode]);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const safeFilename = useMemo(() => {
     const base = (meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_");
@@ -258,37 +253,52 @@ function WatchPage() {
   }, [meta?.title, mediaKind, season, episode]);
 
   function handleDownload() {
+    setDownloadError(null);
     setConfirmOpen(true);
   }
 
   async function confirmDownload() {
     setDownloading(true);
+    setDownloadError(null);
     try {
-      const result = await downloadToDevice(downloadUrl, safeFilename);
-      downloadHistory.add({
-        title: meta?.title || safeFilename,
-        kind: mediaKind === "tv" ? "tv" : "movie",
-        season: mediaKind === "tv" ? season : undefined,
-        episode: mediaKind === "tv" ? episode : undefined,
-        filename: safeFilename,
-        url: downloadUrl,
-        poster: meta?.poster ?? null,
-        status: result === "native" ? "completed" : "opened",
+      const signed = await getBrowserDownloadUrl({
+        data: {
+          kind: mediaKind,
+          tmdb_id: String(mediaId),
+          season: mediaKind === "tv" ? season : undefined,
+          episode: mediaKind === "tv" ? episode : undefined,
+          filename: safeFilename,
+        },
       });
-    } catch {
+      const result = await downloadToDevice(signed.url, safeFilename);
+      downloadHistory.add({
+        id: signed.title_id,
+        title: signed.title || meta?.title || safeFilename,
+        kind: mediaKind === "tv" ? "tv" : "movie",
+        season: mediaKind === "tv" ? season : undefined,
+        episode: mediaKind === "tv" ? episode : undefined,
+        filename: safeFilename,
+        url: signed.url,
+        poster: signed.poster_url || meta?.poster || null,
+        size_bytes: signed.size_bytes,
+        status: result === "native" ? "completed" : "started",
+      });
+      setConfirmOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Download could not start";
+      setDownloadError(message);
       downloadHistory.add({
         title: meta?.title || safeFilename,
         kind: mediaKind === "tv" ? "tv" : "movie",
         season: mediaKind === "tv" ? season : undefined,
         episode: mediaKind === "tv" ? episode : undefined,
         filename: safeFilename,
-        url: downloadUrl,
+        url: window.location.href,
         poster: meta?.poster ?? null,
         status: "failed",
       });
     } finally {
       setDownloading(false);
-      setConfirmOpen(false);
     }
   }
 
@@ -394,12 +404,13 @@ function WatchPage() {
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={handleDownload}
+                  disabled={downloading}
                   className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
                 >
-                  <Download className="h-4 w-4" />
-                  Download {mediaKind === "tv" ? "Episode" : "Movie"}
+                  {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {downloading ? "Starting…" : `Download ${mediaKind === "tv" ? "Episode" : "Movie"}`}
                 </button>
-                <p className="text-[11px] text-muted-foreground">One-tap download. On the app it saves to your Downloads folder; in a browser your Save dialog will appear.</p>
+                <p className="text-[11px] text-muted-foreground">Starts a real browser download, so Chrome/Safari shows the file progress in its Downloads panel.</p>
               </div>
 
             </section>
@@ -458,8 +469,9 @@ function WatchPage() {
               <h3 className="text-base font-black">Download {mediaKind === "tv" ? "episode" : "movie"}?</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will be saved to your device. It will also appear in your Downloads page.
+              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will download through your browser, with progress shown in the browser downloads panel.
             </p>
+            {downloadError && <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">{downloadError}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setConfirmOpen(false)} disabled={downloading} className="rounded-full bg-secondary px-4 py-2 text-sm font-bold disabled:opacity-50">
                 Cancel
