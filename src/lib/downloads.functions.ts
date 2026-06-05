@@ -98,15 +98,34 @@ export const getBrowserDownloadUrl = createServerFn({ method: "POST" })
     }
     const { data: title, error } = await q.maybeSingle();
     if (error) throw new Error(error.message);
-    if (!title) throw new Error("No downloadable file is available for this title yet");
+    const cleanName = data.filename.replace(/[\\/\0]/g, "_");
+
+    if (!title) {
+      // No file in our storage bucket — return a public mirror URL so the
+      // browser can still start a native download. Client treats this as
+      // a successful download start.
+      const fallbackUrl =
+        data.kind === "tv"
+          ? `https://dl.vidsrc.vip/tv/${data.tmdb_id}/${data.season ?? 1}/${data.episode ?? 1}`
+          : `https://dl.vidsrc.vip/movie/${data.tmdb_id}`;
+      return {
+        url: fallbackUrl,
+        title_id: "",
+        title: cleanName.replace(/\.mp4$/i, ""),
+        size_bytes: 0,
+        mime: "video/mp4",
+        poster_url: null,
+        fallback: true as const,
+      };
+    }
     const row = title as unknown as DownloadableTitleRow;
 
-    const cleanName = data.filename.replace(/[\\/\0]/g, "_");
     const { data: signed, error: signErr } = await supabaseAdmin
       .storage
       .from("downloads")
       .createSignedUrl(row.storage_path, 60 * 60 * 6, { download: cleanName });
     if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not start download");
+
 
     return {
       url: signed.signedUrl,
