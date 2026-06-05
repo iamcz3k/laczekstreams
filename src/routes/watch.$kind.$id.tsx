@@ -18,6 +18,7 @@ import { isInWatchlist, recordWatch, toggleWatchlist } from "@/lib/library";
 import { trackWatch } from "@/lib/tracker";
 import { TitleDetails } from "@/components/TitleDetails";
 import { downloadToDevice } from "@/lib/native-download";
+import { downloadHistory } from "@/lib/download-history";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
@@ -248,10 +249,47 @@ function WatchPage() {
     return `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}`;
   }, [mediaKind, mediaId, season, episode]);
 
-  function handleDownload() {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const safeFilename = useMemo(() => {
     const base = (meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_");
-    const safe = mediaKind === "tv" ? `${base}_S${season}E${episode}.mp4` : `${base}.mp4`;
-    void downloadToDevice(downloadUrl, safe);
+    return mediaKind === "tv" ? `${base}_S${season}E${episode}.mp4` : `${base}.mp4`;
+  }, [meta?.title, mediaKind, season, episode]);
+
+  function handleDownload() {
+    setConfirmOpen(true);
+  }
+
+  async function confirmDownload() {
+    setDownloading(true);
+    try {
+      const result = await downloadToDevice(downloadUrl, safeFilename);
+      downloadHistory.add({
+        title: meta?.title || safeFilename,
+        kind: mediaKind === "tv" ? "tv" : "movie",
+        season: mediaKind === "tv" ? season : undefined,
+        episode: mediaKind === "tv" ? episode : undefined,
+        filename: safeFilename,
+        url: downloadUrl,
+        poster: meta?.poster ?? null,
+        status: result === "native" ? "completed" : "opened",
+      });
+    } catch {
+      downloadHistory.add({
+        title: meta?.title || safeFilename,
+        kind: mediaKind === "tv" ? "tv" : "movie",
+        season: mediaKind === "tv" ? season : undefined,
+        episode: mediaKind === "tv" ? episode : undefined,
+        filename: safeFilename,
+        url: downloadUrl,
+        poster: meta?.poster ?? null,
+        status: "failed",
+      });
+    } finally {
+      setDownloading(false);
+      setConfirmOpen(false);
+    }
   }
 
   return (
