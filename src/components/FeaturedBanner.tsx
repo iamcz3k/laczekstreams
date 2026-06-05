@@ -82,7 +82,7 @@ export function FeaturedBanner() {
   const body = (
     <div className="group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-r from-primary/20 via-background to-background">
       {e.image_url && (
-        <img src={e.image_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 transition group-hover:opacity-35" />
+        <img src={e.image_url} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-25 transition group-hover:opacity-35" />
       )}
       <div className="relative flex items-center gap-4 p-5 sm:p-6">
         <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Calendar className="h-5 w-5" /></div>

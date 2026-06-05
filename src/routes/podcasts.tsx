@@ -7,8 +7,12 @@ export const Route = createFileRoute("/podcasts")({
   head: () => ({
     meta: [
       { title: "Podcasts — LACZEK STREAM" },
-      { name: "description", content: "Discover and stream podcasts from around the world." },
+      { name: "description", content: "Discover and stream podcasts from around the world — search, browse, play and subscribe." },
+      { property: "og:title", content: "Podcasts — LACZEK STREAM" },
+      { property: "og:description", content: "Discover and stream podcasts from around the world." },
+      { property: "og:url", content: "https://laczekstream2.lovable.app/podcasts" },
     ],
+    links: [{ rel: "canonical", href: "https://laczekstream2.lovable.app/podcasts" }],
   }),
 });
 
@@ -107,7 +111,7 @@ function PodcastsPage() {
     <div className="min-h-screen bg-background text-foreground pb-32">
       <header className="sticky top-0 z-20 border-b border-border glass">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4">
-          <Link to="/" className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/" aria-label="Back to home" className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></Link>
           <Headphones className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-black">Podcasts</h1>
         </div>

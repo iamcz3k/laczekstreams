@@ -23,14 +23,50 @@ import { getBrowserDownloadUrl } from "@/lib/downloads.functions";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
-  head: () => ({
-    meta: [
-      { title: "Movie Player — LACZEK STREAM" },
-      { name: "description", content: "Watch movies and series in a full-page embedded player with server and episode selection." },
-      { property: "og:title", content: "Movie Player — LACZEK STREAM" },
-      { property: "og:description", content: "Watch movies and series in a full-page embedded player with server and episode selection." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    const k = params.kind === "tv" ? "tv" : "movie";
+    const id = Number(params.id);
+    if (!Number.isFinite(id)) return { title: null as string | null, overview: null as string | null, poster: null as string | null, kind: k };
+    try {
+      const m = await tmdbDetail(k, id);
+      return { title: m?.title ?? null, overview: m?.overview ?? null, poster: m?.poster ?? null, kind: k };
+    } catch {
+      return { title: null as string | null, overview: null as string | null, poster: null as string | null, kind: k };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const k = loaderData?.kind ?? (params.kind === "tv" ? "tv" : "movie");
+    const label = k === "tv" ? "series" : "movie";
+    const name = loaderData?.title || `${k === "tv" ? "Series" : "Movie"} #${params.id}`;
+    const title = `Watch ${name} online free — LACZEK STREAM`.slice(0, 60);
+    const desc = (loaderData?.overview
+      ? `Watch ${name} online for free. ${loaderData.overview}`
+      : `Watch ${name} (${label}) online for free on LACZEK STREAM — no ads, instant play.`).slice(0, 158);
+    const url = `https://laczekstream2.lovable.app/watch/${k}/${params.id}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "video.other" },
+        ...(loaderData?.poster ? [{ property: "og:image", content: loaderData.poster }] : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": k === "tv" ? "TVSeries" : "Movie",
+          name,
+          description: loaderData?.overview ?? desc,
+          image: loaderData?.poster ?? undefined,
+          url,
+        }),
+      }],
+    };
+  },
 });
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
