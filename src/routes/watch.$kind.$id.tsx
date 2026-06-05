@@ -241,30 +241,17 @@ function WatchPage() {
     setSaved(inList);
   }
 
-  // Build download mirrors. These public mirrors detect the TMDB id and present
-  // a direct file download (forces a Save dialog when the user clicks Download
-  // on the mirror). Opening them in a new tab is the only legal pattern — we
-  // cannot blob-fetch cross-origin video files because the embed providers
-  // intentionally hide their CDN URLs.
-  const downloadMirrors = useMemo(() => {
-    const list: { label: string; url: string }[] = [];
-    if (mediaKind === "movie") {
-      list.push({ label: "Mirror 1 · dl.vidsrc", url: `https://dl.vidsrc.vip/movie/${mediaId}` });
-      list.push({ label: "Mirror 2 · vidsrc.icu", url: `https://vidsrc.icu/download/movie/${mediaId}` });
-      list.push({ label: "Mirror 3 · moviesapi", url: `https://moviesapi.club/movie/${mediaId}` });
-    } else {
-      list.push({ label: "Mirror 1 · dl.vidsrc", url: `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}` });
-      list.push({ label: "Mirror 2 · vidsrc.icu", url: `https://vidsrc.icu/download/tv/${mediaId}/${season}/${episode}` });
-    }
-    return list;
+  // One-tap download. Uses a reliable public mirror that resolves the TMDB id
+  // to a direct MP4 (Capacitor writes to Downloads folder, web triggers Save).
+  const downloadUrl = useMemo(() => {
+    if (mediaKind === "movie") return `https://dl.vidsrc.vip/movie/${mediaId}`;
+    return `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}`;
   }, [mediaKind, mediaId, season, episode]);
 
-  function openDownload(url: string) {
-    // Inside the Capacitor APK shell this writes straight to the device's
-    // Downloads folder; on the web it falls back to opening the mirror in a
-    // new tab so the browser's Save dialog can handle it.
-    const safe = `${(meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_")}.mp4`;
-    void downloadToDevice(url, safe);
+  function handleDownload() {
+    const base = (meta?.title || "video").replace(/[^a-z0-9._-]/gi, "_");
+    const safe = mediaKind === "tv" ? `${base}_S${season}E${episode}.mp4` : `${base}.mp4`;
+    void downloadToDevice(downloadUrl, safe);
   }
 
   return (
