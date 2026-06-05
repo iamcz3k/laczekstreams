@@ -14,7 +14,248 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      downloadable_titles: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          episode: number | null
+          id: string
+          kind: string
+          mime: string
+          poster_url: string | null
+          season: number | null
+          size_bytes: number
+          storage_path: string
+          title: string
+          tmdb_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          episode?: number | null
+          id?: string
+          kind: string
+          mime?: string
+          poster_url?: string | null
+          season?: number | null
+          size_bytes?: number
+          storage_path: string
+          title: string
+          tmdb_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          episode?: number | null
+          id?: string
+          kind?: string
+          mime?: string
+          poster_url?: string | null
+          season?: number | null
+          size_bytes?: number
+          storage_path?: string
+          title?: string
+          tmdb_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      featured_events: {
+        Row: {
+          active: boolean
+          created_at: string
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          kind: string
+          link_url: string
+          priority: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          link_url: string
+          priority?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          kind?: string
+          link_url?: string
+          priority?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      match_chats: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          message: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_downloads: {
+        Row: {
+          bytes_downloaded: number
+          completed_at: string | null
+          device_label: string | null
+          id: string
+          started_at: string
+          status: string
+          title_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bytes_downloaded?: number
+          completed_at?: string | null
+          device_label?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          title_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bytes_downloaded?: number
+          completed_at?: string | null
+          device_label?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          title_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_downloads_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "downloadable_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_sessions: {
+        Row: {
+          city: string | null
+          country: string | null
+          current_path: string | null
+          device: string | null
+          duration_seconds: number
+          id: string
+          ip: string | null
+          last_seen_at: string
+          name: string | null
+          page_views: number
+          path_log: Json
+          searches: Json
+          session_key: string
+          started_at: string
+          user_agent: string | null
+          watched: Json
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          current_path?: string | null
+          device?: string | null
+          duration_seconds?: number
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          name?: string | null
+          page_views?: number
+          path_log?: Json
+          searches?: Json
+          session_key: string
+          started_at?: string
+          user_agent?: string | null
+          watched?: Json
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          current_path?: string | null
+          device?: string | null
+          duration_seconds?: number
+          id?: string
+          ip?: string | null
+          last_seen_at?: string
+          name?: string | null
+          page_views?: number
+          path_log?: Json
+          searches?: Json
+          session_key?: string
+          started_at?: string
+          user_agent?: string | null
+          watched?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
