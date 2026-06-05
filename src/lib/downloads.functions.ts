@@ -42,6 +42,52 @@ export const getSignedDownloadUrl = createServerFn({ method: "POST" })
     return { url: signed.signedUrl, size_bytes: (title as any).size_bytes, mime: (title as any).mime };
   });
 
+export const getBrowserDownloadUrl = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        kind: z.enum(["movie", "tv", "anime"]),
+        tmdb_id: z.string().min(1).max(40),
+        season: z.number().int().positive().optional(),
+        episode: z.number().int().positive().optional(),
+        filename: z.string().min(1).max(180),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("downloadable_titles")
+      .select("id, title, kind, season, episode, storage_path, size_bytes, mime, poster_url")
+      .eq("kind", data.kind)
+      .eq("tmdb_id", data.tmdb_id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data.kind === "tv" || data.kind === "anime") {
+      if (data.season) q = q.eq("season", data.season);
+      if (data.episode) q = q.eq("episode", data.episode);
+    }
+    const { data: title, error } = await q.maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!title) throw new Error("No downloadable file is available for this title yet");
+
+    const cleanName = data.filename.replace(/[\\/\0]/g, "_");
+    const { data: signed, error: signErr } = await supabaseAdmin
+      .storage
+      .from("downloads")
+      .createSignedUrl((title as any).storage_path, 60 * 60 * 6, { download: cleanName });
+    if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not start download");
+
+    return {
+      url: signed.signedUrl,
+      title_id: (title as any).id as string,
+      title: (title as any).title as string,
+      size_bytes: Number((title as any).size_bytes || 0),
+      mime: ((title as any).mime || "video/mp4") as string,
+      poster_url: ((title as any).poster_url || null) as string | null,
+    };
+  });
+
 export const markDownloadComplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ title_id: z.string().uuid(), bytes: z.number().int().nonnegative() }).parse(d))
