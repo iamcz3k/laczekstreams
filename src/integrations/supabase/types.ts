@@ -89,43 +89,64 @@ export type Database = {
       featured_events: {
         Row: {
           active: boolean
+          away_flag: string | null
+          away_team: string | null
           created_at: string
           ends_at: string | null
+          home_flag: string | null
+          home_team: string | null
           id: string
           image_url: string | null
           kind: string
           link_url: string
           priority: number
+          sport: string | null
           starts_at: string | null
           subtitle: string | null
+          timer_mode: string
+          timer_target_at: string | null
           title: string
           updated_at: string
         }
         Insert: {
           active?: boolean
+          away_flag?: string | null
+          away_team?: string | null
           created_at?: string
           ends_at?: string | null
+          home_flag?: string | null
+          home_team?: string | null
           id?: string
           image_url?: string | null
           kind?: string
           link_url: string
           priority?: number
+          sport?: string | null
           starts_at?: string | null
           subtitle?: string | null
+          timer_mode?: string
+          timer_target_at?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           active?: boolean
+          away_flag?: string | null
+          away_team?: string | null
           created_at?: string
           ends_at?: string | null
+          home_flag?: string | null
+          home_team?: string | null
           id?: string
           image_url?: string | null
           kind?: string
           link_url?: string
           priority?: number
+          sport?: string | null
           starts_at?: string | null
           subtitle?: string | null
+          timer_mode?: string
+          timer_target_at?: string | null
           title?: string
           updated_at?: string
         }
