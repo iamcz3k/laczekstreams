@@ -27,6 +27,12 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "LACZEK STREAM — Free Movies, TV, Football & YouTube" },
       { name: "description", content: "Stream free movies, live TV channels, football, YouTube and public CCTV cameras — clean matte-black player." },
+      { property: "og:title", content: "LACZEK STREAM — Free Movies, TV, Football & YouTube" },
+      { property: "og:description", content: "Stream free movies, live TV channels, football, YouTube and public CCTV cameras — clean matte-black player." },
+      { property: "og:url", content: "https://laczekstream2.lovable.app/" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://laczekstream2.lovable.app/" },
     ],
   }),
 });

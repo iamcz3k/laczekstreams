@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://laczekstream2.lovable.app/sitemap.xml

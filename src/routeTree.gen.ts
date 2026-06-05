@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SpeedtestRouteImport } from './routes/speedtest'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RadioRouteImport } from './routes/radio'
 import { Route as PodcastsRouteImport } from './routes/podcasts'
 import { Route as PartyRouteImport } from './routes/party'
@@ -30,6 +31,11 @@ import { Route as ApiPublicAdminStorageSignRouteImport } from './routes/api.publ
 const SpeedtestRoute = SpeedtestRouteImport.update({
   id: '/speedtest',
   path: '/speedtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RadioRoute = RadioRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/speedtest': typeof SpeedtestRoute
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/party'
     | '/podcasts'
     | '/radio'
+    | '/sitemap.xml'
     | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/party'
     | '/podcasts'
     | '/radio'
+    | '/sitemap.xml'
     | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/party'
     | '/podcasts'
     | '/radio'
+    | '/sitemap.xml'
     | '/speedtest'
     | '/anime/$animeId'
     | '/football-stream/$matchId'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   PartyRoute: typeof PartyRouteWithChildren
   PodcastsRoute: typeof PodcastsRoute
   RadioRoute: typeof RadioRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SpeedtestRoute: typeof SpeedtestRoute
   AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       path: '/speedtest'
       fullPath: '/speedtest'
       preLoaderRoute: typeof SpeedtestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/radio': {
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartyRoute: PartyRouteWithChildren,
   PodcastsRoute: PodcastsRoute,
   RadioRoute: RadioRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SpeedtestRoute: SpeedtestRoute,
   AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
