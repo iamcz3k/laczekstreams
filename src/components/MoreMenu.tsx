@@ -77,6 +77,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
   function goSpeedTest() { setOpen(false); navigate({ to: "/speedtest" }); }
   function goParty() { setOpen(false); navigate({ to: "/party" }); }
+  function goDownloads() { setOpen(false); navigate({ to: "/downloads" }); }
 
   // Lock body scroll when drawer open
   useEffect(() => {
@@ -188,6 +189,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Install app / APK"}</Row>
               <Row icon={Users} onClick={goParty}>Watch Party</Row>
               <Row icon={Gauge} onClick={goSpeedTest}>Speed test</Row>
+              <Row icon={Download} onClick={goDownloads}>Downloads</Row>
               <Row icon={Share2} onClick={shareSite}>Share LACZEK STREAM</Row>
               <Row icon={Download} onClick={exportData}>Export my library</Row>
               <Row icon={HelpCircle} onClick={() => { setOpen(false); setShowQA(true); }}>Help & FAQ</Row>

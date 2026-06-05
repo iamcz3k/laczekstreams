@@ -13,6 +13,7 @@ import { Route as SpeedtestRouteImport } from './routes/speedtest'
 import { Route as RadioRouteImport } from './routes/radio'
 import { Route as PodcastsRouteImport } from './routes/podcasts'
 import { Route as PartyRouteImport } from './routes/party'
+import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PartyRoomIdRouteImport } from './routes/party.$roomId'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
@@ -24,6 +25,7 @@ import { Route as ApiPublicCctvCamerasRouteImport } from './routes/api.public.cc
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
 import { Route as ApiPublicAnimeImageRouteImport } from './routes/api.public.anime-image'
+import { Route as ApiPublicAdminStorageSignRouteImport } from './routes/api.public.admin-storage-sign'
 
 const SpeedtestRoute = SpeedtestRouteImport.update({
   id: '/speedtest',
@@ -43,6 +45,11 @@ const PodcastsRoute = PodcastsRouteImport.update({
 const PartyRoute = PartyRouteImport.update({
   id: '/party',
   path: '/party',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -101,9 +108,16 @@ const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
   path: '/api/public/anime-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminStorageSignRoute =
+  ApiPublicAdminStorageSignRouteImport.update({
+    id: '/api/public/admin-storage-sign',
+    path: '/api/public/admin-storage-sign',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -111,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/admin-storage-sign': typeof ApiPublicAdminStorageSignRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
@@ -121,6 +136,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -128,6 +144,7 @@ export interface FileRoutesByTo {
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/admin-storage-sign': typeof ApiPublicAdminStorageSignRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
@@ -139,6 +156,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -146,6 +164,7 @@ export interface FileRoutesById {
   '/anime/$animeId': typeof AnimeAnimeIdRoute
   '/football-stream/$matchId': typeof FootballStreamMatchIdRoute
   '/party/$roomId': typeof PartyRoomIdRoute
+  '/api/public/admin-storage-sign': typeof ApiPublicAdminStorageSignRoute
   '/api/public/anime-image': typeof ApiPublicAnimeImageRoute
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
@@ -158,6 +177,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -165,6 +185,7 @@ export interface FileRouteTypes {
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
+    | '/api/public/admin-storage-sign'
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
@@ -175,6 +196,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -182,6 +204,7 @@ export interface FileRouteTypes {
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
+    | '/api/public/admin-storage-sign'
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
@@ -192,6 +215,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -199,6 +223,7 @@ export interface FileRouteTypes {
     | '/anime/$animeId'
     | '/football-stream/$matchId'
     | '/party/$roomId'
+    | '/api/public/admin-storage-sign'
     | '/api/public/anime-image'
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
@@ -210,12 +235,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DownloadsRoute: typeof DownloadsRoute
   PartyRoute: typeof PartyRouteWithChildren
   PodcastsRoute: typeof PodcastsRoute
   RadioRoute: typeof RadioRoute
   SpeedtestRoute: typeof SpeedtestRoute
   AnimeAnimeIdRoute: typeof AnimeAnimeIdRoute
   FootballStreamMatchIdRoute: typeof FootballStreamMatchIdRoute
+  ApiPublicAdminStorageSignRoute: typeof ApiPublicAdminStorageSignRoute
   ApiPublicAnimeImageRoute: typeof ApiPublicAnimeImageRoute
   ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
@@ -253,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/party'
       fullPath: '/party'
       preLoaderRoute: typeof PartyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -332,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAnimeImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin-storage-sign': {
+      id: '/api/public/admin-storage-sign'
+      path: '/api/public/admin-storage-sign'
+      fullPath: '/api/public/admin-storage-sign'
+      preLoaderRoute: typeof ApiPublicAdminStorageSignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -347,12 +388,14 @@ const PartyRouteWithChildren = PartyRoute._addFileChildren(PartyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DownloadsRoute: DownloadsRoute,
   PartyRoute: PartyRouteWithChildren,
   PodcastsRoute: PodcastsRoute,
   RadioRoute: RadioRoute,
   SpeedtestRoute: SpeedtestRoute,
   AnimeAnimeIdRoute: AnimeAnimeIdRoute,
   FootballStreamMatchIdRoute: FootballStreamMatchIdRoute,
+  ApiPublicAdminStorageSignRoute: ApiPublicAdminStorageSignRoute,
   ApiPublicAnimeImageRoute: ApiPublicAnimeImageRoute,
   ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
