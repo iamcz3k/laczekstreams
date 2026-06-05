@@ -6,14 +6,45 @@ import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/anime/$animeId")({
   component: AnimeWatchPage,
-  head: () => ({
-    meta: [
-      { title: "Anime Player — LACZEK STREAM" },
-      { name: "description", content: "Watch anime episodes with source and episode selection." },
-      { property: "og:title", content: "Anime Player — LACZEK STREAM" },
-      { property: "og:description", content: "Watch anime episodes with source and episode selection." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    try {
+      const d = await animeDetail(params.animeId);
+      return { title: d?.title ?? null, synopsis: (d as unknown as { synopsis?: string })?.synopsis ?? null, image: (d as unknown as { poster?: string; image?: string })?.poster ?? (d as unknown as { image?: string })?.image ?? null };
+    } catch {
+      return { title: null as string | null, synopsis: null as string | null, image: null as string | null };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.title || `Anime ${params.animeId}`;
+    const title = `Watch ${name} online free — LACZEK STREAM`.slice(0, 60);
+    const desc = (loaderData?.synopsis
+      ? `Watch ${name} online for free. ${loaderData.synopsis}`
+      : `Watch ${name} online for free on LACZEK STREAM — sub & dub episodes, no ads.`).slice(0, 158);
+    const url = `https://laczekstream2.lovable.app/anime/${params.animeId}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "video.tv_show" },
+        ...(loaderData?.image ? [{ property: "og:image", content: loaderData.image }] : []),
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "TVSeries",
+          name,
+          description: loaderData?.synopsis ?? desc,
+          image: loaderData?.image ?? undefined,
+          url,
+        }),
+      }],
+    };
+  },
 });
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {

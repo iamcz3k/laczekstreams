@@ -8,14 +8,42 @@ import { trackWatch } from "@/lib/tracker";
 
 export const Route = createFileRoute("/football-stream/$matchId")({
   component: FootballStreamPage,
-  head: () => ({
-    meta: [
-      { title: "Football Stream Player — LACZEK STREAM" },
-      { name: "description", content: "Watch football live streams with source selection in an isolated player." },
-      { property: "og:title", content: "Football Stream Player — LACZEK STREAM" },
-      { property: "og:description", content: "Watch football live streams with source selection in an isolated player." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    try {
+      const d = await footballStreamDetail(params.matchId, "football");
+      return { title: d?.title ?? null };
+    } catch {
+      return { title: null as string | null };
+    }
+  },
+  head: ({ params, loaderData }) => {
+    const name = loaderData?.title || `Live match ${params.matchId}`;
+    const title = `${name} — Live stream · LACZEK STREAM`.slice(0, 60);
+    const desc = `Watch ${name} live for free on LACZEK STREAM — multiple HD sources, no ads, instant play.`.slice(0, 158);
+    const url = `https://laczekstream2.lovable.app/football-stream/${params.matchId}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "video.other" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BroadcastEvent",
+          name,
+          description: desc,
+          isLiveBroadcast: true,
+          url,
+        }),
+      }],
+    };
+  },
 });
 
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
