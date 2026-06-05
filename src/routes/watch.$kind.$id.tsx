@@ -354,18 +354,16 @@ function WatchPage() {
             <section className="space-y-2">
               <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground"><Download className="h-3.5 w-3.5" /> Download</h2>
               <div className="grid grid-cols-1 gap-2">
-                {downloadMirrors.map((m) => (
-                  <button
-                    key={m.url}
-                    onClick={() => openDownload(m.url)}
-                    className="inline-flex items-center justify-between gap-2 rounded-[18px] border border-border bg-secondary/50 px-3 py-3 text-sm font-bold transition hover:border-primary hover:bg-primary hover:text-primary-foreground"
-                  >
-                    <span>{m.label}</span>
-                    <Download className="h-4 w-4" />
-                  </button>
-                ))}
-                <p className="text-[11px] text-muted-foreground">Opens a public download mirror in a new tab. Click the green/red download button on the mirror page to save the file to your device.</p>
+                <button
+                  onClick={handleDownload}
+                  className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+                >
+                  <Download className="h-4 w-4" />
+                  Download {mediaKind === "tv" ? "Episode" : "Movie"}
+                </button>
+                <p className="text-[11px] text-muted-foreground">One-tap download. On the app it saves to your Downloads folder; in a browser your Save dialog will appear.</p>
               </div>
+
             </section>
 
             <section className="space-y-2">
