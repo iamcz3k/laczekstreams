@@ -110,3 +110,31 @@ function CrewRow({ label, names }: { label: string; names: string[] }) {
     </div>
   );
 }
+
+function DownloadIfAvailable({ kind, tmdbId, title, poster }: { kind: "movie" | "tv"; tmdbId: number; title: string; poster?: string | null }) {
+  const [match, setMatch] = useState<any | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    listDownloadableTitles({ data: { kind, tmdb_id: String(tmdbId) } })
+      .then((r) => { if (!cancelled) setMatch(r.titles?.[0] ?? null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [kind, tmdbId]);
+  if (!match) return null;
+  return (
+    <DownloadButton
+      titleId={match.id}
+      prepare={async () => ({
+        id: match.id,
+        title: match.title || title,
+        kind: match.kind,
+        season: match.season,
+        episode: match.episode,
+        poster_url: match.poster_url || poster || null,
+        storage_path: match.storage_path,
+        size_bytes: match.size_bytes || 0,
+        mime: match.mime || "video/mp4",
+      })}
+    />
+  );
+}
