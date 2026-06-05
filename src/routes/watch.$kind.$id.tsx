@@ -404,12 +404,13 @@ function WatchPage() {
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={handleDownload}
+                  disabled={downloading}
                   className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
                 >
-                  <Download className="h-4 w-4" />
-                  Download {mediaKind === "tv" ? "Episode" : "Movie"}
+                  {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {downloading ? "Starting…" : `Download ${mediaKind === "tv" ? "Episode" : "Movie"}`}
                 </button>
-                <p className="text-[11px] text-muted-foreground">One-tap download. On the app it saves to your Downloads folder; in a browser your Save dialog will appear.</p>
+                <p className="text-[11px] text-muted-foreground">Starts a real browser download, so Chrome/Safari shows the file progress in its Downloads panel.</p>
               </div>
 
             </section>
@@ -468,8 +469,9 @@ function WatchPage() {
               <h3 className="text-base font-black">Download {mediaKind === "tv" ? "episode" : "movie"}?</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will be saved to your device. It will also appear in your Downloads page.
+              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will download through your browser, with progress shown in the browser downloads panel.
             </p>
+            {downloadError && <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">{downloadError}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setConfirmOpen(false)} disabled={downloading} className="rounded-full bg-secondary px-4 py-2 text-sm font-bold disabled:opacity-50">
                 Cancel
