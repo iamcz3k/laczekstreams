@@ -94,6 +94,7 @@ function Index() {
       <Header active={tab} onChange={setTab} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="sr-only">LACZEK STREAM — Free Movies, TV, Football, Anime, Radio & Live CCTV</h1>
         <div className="mb-6"><FeaturedBanner /></div>
         {tab === "movies" && (
           <section className="space-y-6">

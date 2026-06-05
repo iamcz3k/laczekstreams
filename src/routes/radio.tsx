@@ -7,8 +7,12 @@ export const Route = createFileRoute("/radio")({
   head: () => ({
     meta: [
       { title: "Radio — LACZEK STREAM" },
-      { name: "description", content: "Stream thousands of free radio stations from around the world." },
+      { name: "description", content: "Stream thousands of free radio stations from around the world — browse by country, genre and bitrate." },
+      { property: "og:title", content: "Radio — LACZEK STREAM" },
+      { property: "og:description", content: "Stream thousands of free radio stations worldwide." },
+      { property: "og:url", content: "https://laczekstream2.lovable.app/radio" },
     ],
+    links: [{ rel: "canonical", href: "https://laczekstream2.lovable.app/radio" }],
   }),
 });
 

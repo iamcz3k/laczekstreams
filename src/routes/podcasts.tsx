@@ -7,8 +7,12 @@ export const Route = createFileRoute("/podcasts")({
   head: () => ({
     meta: [
       { title: "Podcasts — LACZEK STREAM" },
-      { name: "description", content: "Discover and stream podcasts from around the world." },
+      { name: "description", content: "Discover and stream podcasts from around the world — search, browse, play and subscribe." },
+      { property: "og:title", content: "Podcasts — LACZEK STREAM" },
+      { property: "og:description", content: "Discover and stream podcasts from around the world." },
+      { property: "og:url", content: "https://laczekstream2.lovable.app/podcasts" },
     ],
+    links: [{ rel: "canonical", href: "https://laczekstream2.lovable.app/podcasts" }],
   }),
 });
 
