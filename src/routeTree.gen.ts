@@ -13,6 +13,7 @@ import { Route as SpeedtestRouteImport } from './routes/speedtest'
 import { Route as RadioRouteImport } from './routes/radio'
 import { Route as PodcastsRouteImport } from './routes/podcasts'
 import { Route as PartyRouteImport } from './routes/party'
+import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PartyRoomIdRouteImport } from './routes/party.$roomId'
 import { Route as FootballStreamMatchIdRouteImport } from './routes/football-stream.$matchId'
@@ -43,6 +44,11 @@ const PodcastsRoute = PodcastsRouteImport.update({
 const PartyRoute = PartyRouteImport.update({
   id: '/party',
   path: '/party',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -104,6 +110,7 @@ const ApiPublicAnimeImageRoute = ApiPublicAnimeImageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/downloads': typeof DownloadsRoute
   '/party': typeof PartyRouteWithChildren
   '/podcasts': typeof PodcastsRoute
   '/radio': typeof RadioRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/downloads'
     | '/party'
     | '/podcasts'
     | '/radio'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DownloadsRoute: typeof DownloadsRoute
   PartyRoute: typeof PartyRouteWithChildren
   PodcastsRoute: typeof PodcastsRoute
   RadioRoute: typeof RadioRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/party'
       fullPath: '/party'
       preLoaderRoute: typeof PartyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -347,6 +367,7 @@ const PartyRouteWithChildren = PartyRoute._addFileChildren(PartyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DownloadsRoute: DownloadsRoute,
   PartyRoute: PartyRouteWithChildren,
   PodcastsRoute: PodcastsRoute,
   RadioRoute: RadioRoute,
@@ -364,3 +385,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
