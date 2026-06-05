@@ -447,6 +447,31 @@ function WatchPage() {
 
         {Number.isFinite(mediaId) && <TitleDetails kind={mediaKind} id={mediaId} />}
       </div>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl" onClick={() => !downloading && setConfirmOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-3xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <Download className="h-5 w-5" />
+              </span>
+              <h3 className="text-base font-black">Download {mediaKind === "tv" ? "episode" : "movie"}?</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will be saved to your device. It will also appear in your Downloads page.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setConfirmOpen(false)} disabled={downloading} className="rounded-full bg-secondary px-4 py-2 text-sm font-bold disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={confirmDownload} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+                {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {downloading ? "Starting…" : "Download"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
