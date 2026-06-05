@@ -3,6 +3,7 @@ import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw
 import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
+import { UploadVideoForm } from "@/components/UploadVideoForm";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
@@ -479,6 +480,11 @@ function ConfigPanel({ password }: { password: string }) {
           </ul>
         )}
       </Section>
+
+      <Section title="Downloadable videos" icon={Megaphone}>
+        <UploadVideoForm password={password} />
+      </Section>
+
 
       {editing && (
         <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/85 p-4" onClick={() => setEditing(null)}>
