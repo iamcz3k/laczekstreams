@@ -11,7 +11,7 @@ export type DownloadHistoryItem = {
   url: string;
   poster?: string | null;
   size_bytes?: number;
-  status: "completed" | "opened" | "failed";
+  status: "completed" | "started" | "opened" | "failed";
   created_at: number;
 };
 
