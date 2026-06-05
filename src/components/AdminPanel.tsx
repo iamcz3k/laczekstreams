@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
+import { FlagPicker } from "@/components/FlagPicker";
 
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
@@ -515,9 +516,48 @@ function ConfigPanel({ password }: { password: string }) {
               <input value={editing.kind || ""} onChange={(ev) => setEditing({ ...editing, kind: ev.target.value })} placeholder="Kind (match/premiere/…)" className="rounded-xl bg-background px-3 py-2 text-sm" />
               <input type="number" value={editing.priority ?? 0} onChange={(ev) => setEditing({ ...editing, priority: Number(ev.target.value) })} placeholder="Priority" className="rounded-xl bg-background px-3 py-2 text-sm" />
             </div>
+            <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Match / teams (optional)</p>
+              <select value={editing.sport || ""} onChange={(ev) => setEditing({ ...editing, sport: ev.target.value || null })} className="w-full rounded-lg bg-background px-3 py-2 text-xs">
+                <option value="">— Sport —</option>
+                <option value="Soccer">⚽ Soccer</option>
+                <option value="Basketball">🏀 Basketball</option>
+                <option value="Football">🏈 Football (NFL)</option>
+                <option value="Baseball">⚾ Baseball</option>
+                <option value="Hockey">🏒 Hockey</option>
+                <option value="Tennis">🎾 Tennis</option>
+                <option value="MMA">🥊 MMA / UFC</option>
+                <option value="F1">🏎️ Formula 1</option>
+                <option value="Cricket">🏏 Cricket</option>
+                <option value="Rugby">🏉 Rugby</option>
+              </select>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={editing.home_team || ""} onChange={(ev) => setEditing({ ...editing, home_team: ev.target.value })} placeholder="Home team" className="rounded-lg bg-background px-3 py-2 text-xs" />
+                <input value={editing.away_team || ""} onChange={(ev) => setEditing({ ...editing, away_team: ev.target.value })} placeholder="Away team" className="rounded-lg bg-background px-3 py-2 text-xs" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <FlagPicker value={editing.home_flag} onChange={(c) => setEditing({ ...editing, home_flag: c })} placeholder="Home flag" />
+                <FlagPicker value={editing.away_flag} onChange={(c) => setEditing({ ...editing, away_flag: c })} placeholder="Away flag" />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Tip: paste a badge URL (https://…) into the flag field to use a club logo instead of a country flag.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <input value={editing.home_flag && editing.home_flag.startsWith("http") ? editing.home_flag : ""} onChange={(ev) => setEditing({ ...editing, home_flag: ev.target.value || null })} placeholder="…or home badge URL" className="rounded-lg bg-background px-3 py-2 text-xs" />
+                <input value={editing.away_flag && editing.away_flag.startsWith("http") ? editing.away_flag : ""} onChange={(ev) => setEditing({ ...editing, away_flag: ev.target.value || null })} placeholder="…or away badge URL" className="rounded-lg bg-background px-3 py-2 text-xs" />
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Live timer (shown publicly)</p>
+              <select value={editing.timer_mode || "none"} onChange={(ev) => setEditing({ ...editing, timer_mode: ev.target.value as "none"|"countdown"|"countup" })} className="w-full rounded-lg bg-background px-3 py-2 text-xs">
+                <option value="none">No timer</option>
+                <option value="countdown">Countdown to event</option>
+                <option value="countup">Count up from event</option>
+              </select>
+              <input type="datetime-local" value={editing.timer_target_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, timer_target_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="w-full rounded-lg bg-background px-3 py-2 text-xs" />
+              <p className="text-[10px] text-muted-foreground">Falls back to Start time if no target is set.</p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <input type="datetime-local" value={editing.starts_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" />
-              <input type="datetime-local" value={editing.ends_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" />
+              <input type="datetime-local" value={editing.starts_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Starts" />
+              <input type="datetime-local" value={editing.ends_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Ends" />
             </div>
             <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={editing.active ?? true} onChange={(ev) => setEditing({ ...editing, active: ev.target.checked })} className="h-4 w-4 accent-primary" /> Active</label>
             <div className="flex justify-end gap-2 pt-2">
