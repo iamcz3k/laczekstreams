@@ -288,22 +288,35 @@ export function DownloadsTab() {
                             </button>
                           )}
                           {status === "failed" && (
-                            <button onClick={() => downloadEngine.retry(m.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                            <button
+                              onClick={() => downloadEngine.retry(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                            >
                               <RotateCcw className="h-3.5 w-3.5" /> Retry
                             </button>
                           )}
                           {status !== "completed" && (
-                            <button onClick={() => downloadEngine.cancel(m.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                            <button
+                              onClick={() => downloadEngine.cancel(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                            >
                               <X className="h-3.5 w-3.5" /> Cancel
                             </button>
                           )}
                           {status === "completed" && (
-                            <button onClick={() => downloadEngine.remove(m.id)} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
+                            <button
+                              onClick={() => downloadEngine.remove(m.id)}
+                              className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                            >
                               <Trash2 className="h-3.5 w-3.5" /> Delete
                             </button>
                           )}
-                          {status === "queued" && <Loader2 className="ml-1 h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-                          {status === "completed" && <Check className="ml-1 h-3.5 w-3.5 text-emerald-400" />}
+                          {status === "queued" && (
+                            <Loader2 className="ml-1 h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                          )}
+                          {status === "completed" && (
+                            <Check className="ml-1 h-3.5 w-3.5 text-emerald-400" />
+                          )}
                         </div>
                       </div>
                     </div>
