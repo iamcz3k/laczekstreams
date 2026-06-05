@@ -99,21 +99,22 @@ export const getBrowserDownloadUrl = createServerFn({ method: "POST" })
     const { data: title, error } = await q.maybeSingle();
     if (error) throw new Error(error.message);
     if (!title) throw new Error("No downloadable file is available for this title yet");
+    const row = title as unknown as DownloadableTitleRow;
 
     const cleanName = data.filename.replace(/[\\/\0]/g, "_");
     const { data: signed, error: signErr } = await supabaseAdmin
       .storage
       .from("downloads")
-      .createSignedUrl((title as any).storage_path, 60 * 60 * 6, { download: cleanName });
+      .createSignedUrl(row.storage_path, 60 * 60 * 6, { download: cleanName });
     if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not start download");
 
     return {
       url: signed.signedUrl,
-      title_id: (title as any).id as string,
-      title: (title as any).title as string,
-      size_bytes: Number((title as any).size_bytes || 0),
-      mime: ((title as any).mime || "video/mp4") as string,
-      poster_url: ((title as any).poster_url || null) as string | null,
+      title_id: row.id,
+      title: row.title,
+      size_bytes: Number(row.size_bytes || 0),
+      mime: row.mime || "video/mp4",
+      poster_url: row.poster_url || null,
     };
   });
 
