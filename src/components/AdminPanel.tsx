@@ -360,6 +360,9 @@ type CfgEvent = {
   id: string; title: string; subtitle: string | null; image_url: string | null;
   link_url: string; kind: string; starts_at: string | null; ends_at: string | null;
   priority: number; active: boolean;
+  sport: string | null; home_team: string | null; away_team: string | null;
+  home_flag: string | null; away_flag: string | null;
+  timer_mode: "none" | "countdown" | "countup" | null; timer_target_at: string | null;
 };
 
 function ConfigPanel({ password }: { password: string }) {
@@ -408,6 +411,13 @@ function ConfigPanel({ password }: { password: string }) {
       ends_at: editing.ends_at ?? null,
       priority: editing.priority ?? 0,
       active: editing.active ?? true,
+      sport: editing.sport ?? null,
+      home_team: editing.home_team ?? null,
+      away_team: editing.away_team ?? null,
+      home_flag: editing.home_flag ?? null,
+      away_flag: editing.away_flag ?? null,
+      timer_mode: editing.timer_mode ?? "none",
+      timer_target_at: editing.timer_target_at ?? null,
     } });
     setEditing(null); refresh();
   }
