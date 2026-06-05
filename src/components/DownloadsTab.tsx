@@ -110,6 +110,16 @@ export function DownloadsTab() {
                   {h.size_bytes ? <p className="mt-0.5 text-[11px] text-muted-foreground">{formatBytes(h.size_bytes)}</p> : null}
                 </div>
                 <div className="flex flex-col gap-1.5">
+                  {h.status === "started" && (
+                    <div className="flex gap-1.5">
+                      <button onClick={() => window.alert("Pause this from your browser downloads panel.")} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1.5 text-[11px] font-semibold" title="Pause in browser">
+                        <Pause className="h-3 w-3" /> Pause
+                      </button>
+                      <button onClick={() => window.alert("Resume this from your browser downloads panel.")} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1.5 text-[11px] font-semibold" title="Resume in browser">
+                        <Play className="h-3 w-3" /> Resume
+                      </button>
+                    </div>
+                  )}
                   <a href={h.url} className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold">
                     <ExternalLink className="h-3 w-3" /> Download
                   </a>
