@@ -61,6 +61,25 @@ export const Route = createRootRoute({
       },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "apple-touch-icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "LACZEK STREAM",
+          url: "https://laczekstream2.lovable.app",
+          description: "Free movies, TV, football, anime, radio, podcasts & live CCTV.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://laczekstream2.lovable.app/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
