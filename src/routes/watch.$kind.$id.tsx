@@ -257,30 +257,55 @@ function WatchPage() {
     setConfirmOpen(true);
   }
 
+  function buildFallbackUrl() {
+    // Public download mirror — works for any TMDB id without needing files
+    // uploaded to our storage bucket. Opens in a new tab so the browser's
+    // native download manager handles the file.
+    if (mediaKind === "tv") {
+      return `https://dl.vidsrc.vip/tv/${mediaId}/${season}/${episode}`;
+    }
+    return `https://dl.vidsrc.vip/movie/${mediaId}`;
+  }
+
   async function confirmDownload() {
     setDownloading(true);
     setDownloadError(null);
     try {
-      const signed = await getBrowserDownloadUrl({
-        data: {
-          kind: mediaKind,
-          tmdb_id: String(mediaId),
-          season: mediaKind === "tv" ? season : undefined,
-          episode: mediaKind === "tv" ? episode : undefined,
-          filename: safeFilename,
-        },
-      });
-      const result = await downloadToDevice(signed.url, safeFilename);
+      let url: string;
+      let titleId: string | undefined;
+      let sizeBytes: number | undefined;
+      let posterUrl: string | null | undefined;
+      let titleName: string | undefined;
+      try {
+        const signed = await getBrowserDownloadUrl({
+          data: {
+            kind: mediaKind,
+            tmdb_id: String(mediaId),
+            season: mediaKind === "tv" ? season : undefined,
+            episode: mediaKind === "tv" ? episode : undefined,
+            filename: safeFilename,
+          },
+        });
+        url = signed.url;
+        titleId = signed.title_id;
+        sizeBytes = signed.size_bytes;
+        posterUrl = signed.poster_url;
+        titleName = signed.title;
+      } catch {
+        // Fallback: external mirror (works without uploaded files)
+        url = buildFallbackUrl();
+      }
+      const result = await downloadToDevice(url, safeFilename);
       downloadHistory.add({
-        id: signed.title_id,
-        title: signed.title || meta?.title || safeFilename,
+        id: titleId,
+        title: titleName || meta?.title || safeFilename,
         kind: mediaKind === "tv" ? "tv" : "movie",
         season: mediaKind === "tv" ? season : undefined,
         episode: mediaKind === "tv" ? episode : undefined,
         filename: safeFilename,
-        url: signed.url,
-        poster: signed.poster_url || meta?.poster || null,
-        size_bytes: signed.size_bytes,
+        url,
+        poster: posterUrl ?? meta?.poster ?? null,
+        size_bytes: sizeBytes,
         status: result === "native" ? "completed" : "started",
       });
       setConfirmOpen(false);
@@ -301,6 +326,7 @@ function WatchPage() {
       setDownloading(false);
     }
   }
+
 
   return (
     <main className="min-h-screen bg-background text-foreground">
