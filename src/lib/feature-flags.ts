@@ -76,8 +76,12 @@ export async function loadActiveEvents(): Promise<FeaturedEvent[]> {
     .order("priority", { ascending: false });
   if (error || !data) return [];
   return (data as FeaturedEvent[]).filter((e) => {
-    // Include events that haven't started yet so the banner can show a countdown.
-    if (e.ends_at && e.ends_at < nowIso) return false;
+    // Hide only if explicitly ended >24h ago; keep recent past events live
+    // so admins don't have to micromanage end times.
+    if (e.ends_at) {
+      const ended = new Date(e.ends_at).getTime();
+      if (Number.isFinite(ended) && Date.now() - ended > 24 * 60 * 60 * 1000) return false;
+    }
     return true;
   });
 }
