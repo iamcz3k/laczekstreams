@@ -559,7 +559,20 @@ function ConfigPanel({ password }: { password: string }) {
               <input type="datetime-local" value={editing.starts_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Starts" />
               <input type="datetime-local" value={editing.ends_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Ends" />
             </div>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={editing.active ?? true} onChange={(ev) => setEditing({ ...editing, active: ev.target.checked })} className="h-4 w-4 accent-primary" /> Active</label>
+            <button
+              type="button"
+              onClick={() => setEditing({ ...editing, active: !(editing.active ?? true) })}
+              className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs font-black uppercase tracking-widest transition ${
+                (editing.active ?? true)
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border bg-secondary/40 text-muted-foreground"
+              }`}
+            >
+              <span>{(editing.active ?? true) ? "🟢 Live — visible to public" : "⚪ Off — hidden from public"}</span>
+              <span className={`relative inline-flex h-5 w-9 rounded-full transition ${(editing.active ?? true) ? "bg-primary" : "bg-border"}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${(editing.active ?? true) ? "left-[18px]" : "left-0.5"}`} />
+              </span>
+            </button>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setEditing(null)} className="rounded-full bg-secondary px-4 py-2 text-xs">Cancel</button>
               <button onClick={saveEvent} className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Save</button>
