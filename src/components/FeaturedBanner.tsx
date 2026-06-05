@@ -69,7 +69,15 @@ export function FeaturedBanner() {
   const isInternal = e.link_url.startsWith("/");
   const hasTeams = !!(e.home_team || e.away_team || e.home_flag || e.away_flag);
   const timerTarget = e.timer_target_at || e.starts_at || null;
-  const timerMode = (e.timer_mode === "countdown" || e.timer_mode === "countup") ? e.timer_mode : null;
+  const rawMode = e.timer_mode;
+  const timerMode: "countdown" | "countup" | null =
+    rawMode === "countdown" || rawMode === "countup"
+      ? rawMode
+      : timerTarget
+        ? (new Date(timerTarget).getTime() > Date.now() ? "countdown" : "countup")
+        : null;
+  const showTimer = !!(timerTarget && timerMode);
+  const timerMissingTarget = !timerTarget && (rawMode === "countdown" || rawMode === "countup");
 
   const body = (
     <div className="group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-r from-primary/20 via-background to-background">
@@ -81,16 +89,23 @@ export function FeaturedBanner() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{e.sport || e.kind} · Featured</p>
-            {timerTarget && timerMode && <LiveTimer targetIso={timerTarget} mode={timerMode} />}
           </div>
           {hasTeams ? (
             <div className="mt-1.5 flex items-center justify-between gap-3">
               <Side team={e.home_team} flag={e.home_flag} align="left" />
-              <span className="shrink-0 text-[10px] font-black text-muted-foreground">VS</span>
+              <div className="flex shrink-0 flex-col items-center gap-1">
+                <span className="text-[10px] font-black text-muted-foreground">VS</span>
+                {showTimer
+                  ? <LiveTimer targetIso={timerTarget!} mode={timerMode!} />
+                  : timerMissingTarget && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-500">set timer date</span>}
+              </div>
               <Side team={e.away_team} flag={e.away_flag} align="right" />
             </div>
           ) : (
-            <h3 className="mt-1 truncate text-base font-black sm:text-xl">{e.title}</h3>
+            <>
+              <h3 className="mt-1 truncate text-base font-black sm:text-xl">{e.title}</h3>
+              {showTimer && <div className="mt-1"><LiveTimer targetIso={timerTarget!} mode={timerMode!} /></div>}
+            </>
           )}
           {e.subtitle && <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">{e.subtitle}</p>}
         </div>
