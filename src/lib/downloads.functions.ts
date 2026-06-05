@@ -183,7 +183,7 @@ export const adminCreateDownloadableTitle = createServerFn({ method: "POST" })
     const { password: _pw, ...row } = data;
     const { data: inserted, error } = await supabaseAdmin
       .from("downloadable_titles")
-      .insert(row as any)
+      .insert(row as DownloadableTitleInsert)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -197,8 +197,9 @@ export const adminDeleteDownloadableTitle = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Best-effort: get path, then delete row + storage object.
     const { data: t } = await supabaseAdmin.from("downloadable_titles").select("storage_path").eq("id", data.id).maybeSingle();
-    if (t && (t as any).storage_path) {
-      await supabaseAdmin.storage.from("downloads").remove([(t as any).storage_path]);
+    const title = t as unknown as Pick<DownloadableTitleRow, "storage_path"> | null;
+    if (title?.storage_path) {
+      await supabaseAdmin.storage.from("downloads").remove([title.storage_path]);
     }
     const { error } = await supabaseAdmin.from("downloadable_titles").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
