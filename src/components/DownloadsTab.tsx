@@ -39,6 +39,110 @@ const STATUS_LABEL: Record<DownloadStatus, { label: string; tone: string }> = {
   cancelled: { label: "Cancelled", tone: "text-muted-foreground" },
 };
 
+function BrowserDownloads({ history }: { history: DownloadHistoryItem[] }) {
+  const browserControl = (action: "Pause" | "Resume") => {
+    window.alert(`${action} this from your browser downloads panel.`);
+  };
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Recent downloads
+        </h3>
+        <button
+          onClick={() => downloadHistory.clear()}
+          className="text-[11px] font-semibold text-muted-foreground hover:text-destructive"
+        >
+          Clear
+        </button>
+      </div>
+      <ul className="space-y-2">
+        {history.map((h) => {
+          const statusText =
+            h.status === "completed"
+              ? "Saved to device"
+              : h.status === "started"
+                ? "Started in browser"
+                : h.status === "opened"
+                  ? "Opened in browser"
+                  : "Failed";
+
+          return (
+            <li key={h.id} className="glass flex items-center gap-3 rounded-2xl p-3">
+              {h.poster ? (
+                <img
+                  src={h.poster}
+                  alt=""
+                  className="h-16 w-12 flex-shrink-0 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Film className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{h.title}</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {h.kind}
+                  {h.season ? ` · S${h.season}` : ""}
+                  {h.episode ? `E${h.episode}` : ""}
+                  {" · "}
+                  {new Date(h.created_at).toLocaleDateString()}
+                </p>
+                <p
+                  className={`mt-0.5 text-[11px] font-semibold ${
+                    h.status === "failed" ? "text-destructive" : "text-emerald-400"
+                  }`}
+                >
+                  {statusText}
+                </p>
+                {h.size_bytes ? (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {formatBytes(h.size_bytes)}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {h.status === "started" && (
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => browserControl("Pause")}
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1.5 text-[11px] font-semibold"
+                      title="Pause in browser"
+                    >
+                      <Pause className="h-3 w-3" /> Pause
+                    </button>
+                    <button
+                      onClick={() => browserControl("Resume")}
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1.5 text-[11px] font-semibold"
+                      title="Resume in browser"
+                    >
+                      <Play className="h-3 w-3" /> Resume
+                    </button>
+                  </div>
+                )}
+                <a
+                  href={h.url}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                >
+                  <ExternalLink className="h-3 w-3" /> Download
+                </a>
+                <button
+                  onClick={() => downloadHistory.remove(h.id)}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-semibold"
+                >
+                  <Trash2 className="h-3 w-3" /> Remove
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export function DownloadsTab() {
   const items = useDownloadsList();
   const [progressMap, setProgressMap] = useState<Record<string, DownloadProgress>>({});
