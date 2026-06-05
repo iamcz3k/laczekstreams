@@ -48,6 +48,13 @@ export type FeaturedEventInput = {
   ends_at?: string | null;
   priority?: number;
   active?: boolean;
+  sport?: string | null;
+  home_team?: string | null;
+  away_team?: string | null;
+  home_flag?: string | null;
+  away_flag?: string | null;
+  timer_mode?: "none" | "countdown" | "countup" | null;
+  timer_target_at?: string | null;
 };
 
 export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
@@ -67,6 +74,13 @@ export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
       ends_at: data.ends_at ?? null,
       priority: data.priority ?? 0,
       active: data.active ?? true,
+      sport: data.sport ?? null,
+      home_team: data.home_team ?? null,
+      away_team: data.away_team ?? null,
+      home_flag: data.home_flag ?? null,
+      away_flag: data.away_flag ?? null,
+      timer_mode: data.timer_mode ?? "none",
+      timer_target_at: data.timer_target_at ?? null,
       updated_at: new Date().toISOString(),
     };
     if (data.id) {
