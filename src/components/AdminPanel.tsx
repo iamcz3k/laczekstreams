@@ -304,43 +304,11 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
 
         {tab === "visitors" && (
-          <div className="space-y-2">
-            {data.sessions.map((s: any) => {
-              const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
-              const link = streamLinkFromPath(s.current_path);
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setOpenSession(s)}
-                  className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
-                      />
-                      <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
-                      <span className="text-muted-foreground">
-                        · {s.country || "?"}
-                        {s.city ? `, ${s.city}` : ""}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
-                  </div>
-                  <p className="text-muted-foreground">
-                    {s.device} · {s.page_views} views
-                    {link ? (
-                      <>
-                        {" "}
-                        · watching <span className="text-primary">{link.label}</span>
-                      </>
-                    ) : null}
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
-                </button>
-              );
-            })}
-          </div>
+          <VisitorsList
+            sessions={data.sessions}
+            password={password}
+            onOpenSession={setOpenSession}
+          />
         )}
 
         {tab === "accounts" && (
