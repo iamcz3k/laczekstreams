@@ -1598,6 +1598,13 @@ function ChangelogPanel({ password }: { password: string }) {
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, active } : i)));
   }
 
+  const kindStyle: Record<ChangelogRow["kind"], string> = {
+    new: "bg-primary text-primary-foreground",
+    fix: "bg-emerald-500 text-white",
+    improved: "bg-blue-500 text-white",
+    soon: "bg-amber-500 text-white",
+  };
+
   const publishedTitles = new Set(items.map((i) => i.title.trim().toLowerCase()));
   const suggestions = CHANGELOG_SUGGESTIONS.filter(
     (s) => !publishedTitles.has(s.title.trim().toLowerCase()),
