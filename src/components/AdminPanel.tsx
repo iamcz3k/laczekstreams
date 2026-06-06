@@ -93,6 +93,16 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function silentReload(pw: string) {
+    if (!authed) return;
+    try {
+      const res = await fetchFn({ data: { password: pw } });
+      setData(res);
+    } catch {
+      // silently fail on background refresh
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await load(password);
@@ -102,7 +112,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   pwRef.current = password;
   useEffect(() => {
     if (!authed) return;
-    const t = window.setInterval(() => load(pwRef.current), 5000);
+    const t = window.setInterval(() => silentReload(pwRef.current), 30_000);
     return () => window.clearInterval(t);
   }, [authed]);
 
