@@ -384,6 +384,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
 
         {tab === "config" && <ConfigPanel password={password} />}
+
+        {tab === "broadcasts" && <BroadcastsPanel password={password} />}
       </div>
     </div>
   );
