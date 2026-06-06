@@ -687,6 +687,7 @@ function ConfigPanel({ password }: { password: string }) {
 
   async function toggleFlag(key: string, enabled: boolean) {
     setFlags((arr) => arr.map((f) => (f.key === key ? { ...f, enabled } : f)));
+    if (key === "default_movie_server") setDefaultServerEnabled(enabled);
     await setFlag({ data: { password, key, enabled } });
     refreshFeatureFlags();
   }
@@ -754,6 +755,11 @@ function ConfigPanel({ password }: { password: string }) {
   async function saveDefaultServer(provider: string, enabled: boolean) {
     setDefaultServerState(provider);
     setDefaultServerEnabled(enabled);
+    setFlags((arr) =>
+      arr.map((f) =>
+        f.key === "default_movie_server" ? { ...f, enabled, description: provider } : f,
+      ),
+    );
     await setDefaultServer({ data: { password, provider, enabled } });
     refreshFeatureFlags();
   }
