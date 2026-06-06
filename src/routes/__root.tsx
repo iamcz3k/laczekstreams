@@ -122,10 +122,18 @@ function RootComponent() {
       document.documentElement.classList.remove("dark");
       document.documentElement.classList.remove("light");
     }
+    // Smart TV detection: large screens that match known TV UA tokens get a
+    // dedicated "10-foot UI" treatment — bigger type, larger tap targets,
+    // visible focus rings for D-pad navigation.
+    try {
+      const ua = navigator.userAgent || "";
+      const tvUA = /SmartTV|SMART-TV|GoogleTV|Google TV|AppleTV|Apple TV|HbbTV|NetCast|VIERA|Tizen|Web0S|webOS|BRAVIA|AFT[A-Z0-9]|AFTS|AFTM|AFTT|AFTB|Roku|PlayStation|Xbox|Nintendo|DTV|InettvBrowser/i.test(ua);
+      const bigScreen = typeof window !== "undefined" && window.innerWidth >= 1280 && window.matchMedia?.("(pointer: coarse), (pointer: none)").matches;
+      const forced = new URLSearchParams(window.location.search).get("tv") === "1";
+      if (tvUA || bigScreen || forced) document.documentElement.classList.add("tv-mode");
+    } catch {}
     import("@/lib/notifications").then((m) => m.ensureSW()).catch(() => {});
-    // Silent ad / direct-link blocker
     import("@/lib/adblock").then((m) => m.installSilentAdBlock()).catch(() => {});
-    // Visitor analytics tracker (V3 admin panel)
     import("@/lib/tracker").then((m) => m.startTracking()).catch(() => {});
 
     function onAlert(e: Event) {
