@@ -1598,15 +1598,77 @@ function ChangelogPanel({ password }: { password: string }) {
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, active } : i)));
   }
 
-  const kindStyle: Record<ChangelogRow["kind"], string> = {
-    new: "bg-primary text-primary-foreground",
-    fix: "bg-emerald-500 text-white",
-    improved: "bg-blue-500 text-white",
-    soon: "bg-amber-500 text-white",
-  };
+  const publishedTitles = new Set(items.map((i) => i.title.trim().toLowerCase()));
+  const suggestions = CHANGELOG_SUGGESTIONS.filter(
+    (s) => !publishedTitles.has(s.title.trim().toLowerCase()),
+  );
+
+  async function publishSuggestion(s: (typeof CHANGELOG_SUGGESTIONS)[number]) {
+    setBusy(true);
+    setError(null);
+    try {
+      await createFn({
+        data: { password, kind: s.kind, title: s.title, detail: s.detail || null },
+      });
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message || "Could not publish");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
+      <div className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black uppercase tracking-widest">Suggested updates</h3>
+          <span className="text-[11px] text-muted-foreground">{suggestions.length} available</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Auto-pulled list of features, fixes and improvements we've shipped. Tap publish to push it to every user.
+        </p>
+        {suggestions.length === 0 ? (
+          <p className="text-xs text-muted-foreground">All caught up — nothing new to publish.</p>
+        ) : (
+          <ul className="space-y-2">
+            {suggestions.map((s) => (
+              <li
+                key={s.key}
+                className="rounded-xl border border-border bg-background/60 p-3"
+              >
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[s.kind]}`}>
+                    {s.kind.toUpperCase()}
+                  </span>
+                  <p className="text-sm font-bold">{s.title}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">{s.detail}</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => publishSuggestion(s)}
+                    disabled={busy}
+                    className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition active:scale-95 disabled:opacity-50"
+                  >
+                    Publish to users
+                  </button>
+                  <button
+                    onClick={() => {
+                      setKind(s.kind);
+                      setTitle(s.title);
+                      setDetail(s.detail);
+                    }}
+                    className="rounded-full bg-secondary px-3 py-1.5 text-[11px] font-bold"
+                  >
+                    Edit first
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <form onSubmit={publish} className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
         <h3 className="text-sm font-black uppercase tracking-widest">Publish update</h3>
         <p className="text-xs text-muted-foreground">
