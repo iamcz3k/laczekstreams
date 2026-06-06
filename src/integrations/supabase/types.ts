@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcast_responses: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          dismissed: boolean
+          id: string
+          name: string | null
+          rating: number | null
+          response_text: string | null
+          session_key: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          name?: string | null
+          rating?: number | null
+          response_text?: string | null
+          session_key: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          name?: string | null
+          rating?: number | null
+          response_text?: string | null
+          session_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_broadcast_responses_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "admin_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_broadcasts: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          target_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          target_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          target_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       downloadable_titles: {
         Row: {
           created_at: string
