@@ -43,6 +43,7 @@ import {
   adminDeleteChangelog,
   adminToggleChangelog,
 } from "@/lib/changelog-admin.functions";
+import { CHANGELOG_SUGGESTIONS } from "@/lib/changelog-suggestions";
 import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
