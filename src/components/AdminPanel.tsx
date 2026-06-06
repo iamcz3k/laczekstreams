@@ -93,6 +93,16 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function silentReload(pw: string) {
+    if (!authed) return;
+    try {
+      const res = await fetchFn({ data: { password: pw } });
+      setData(res);
+    } catch {
+      // silently fail on background refresh
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await load(password);
@@ -102,7 +112,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   pwRef.current = password;
   useEffect(() => {
     if (!authed) return;
-    const t = window.setInterval(() => load(pwRef.current), 5000);
+    const t = window.setInterval(() => silentReload(pwRef.current), 30_000);
     return () => window.clearInterval(t);
   }, [authed]);
 
@@ -1307,26 +1317,34 @@ function BroadcastsPanel({ password }: { password: string }) {
   const toggle = useServerFn(adminToggleBroadcast);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [responses, setResponses] = useState<BResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [kind, setKind] = useState<"notification" | "question" | "review">("notification");
   const [msg, setMsg] = useState("");
   const [target, setTarget] = useState("");
   const [sending, setSending] = useState(false);
 
   async function refresh() {
-    setLoading(true);
     try {
       const r = await list({ data: { password } });
       setBroadcasts(r.broadcasts as Broadcast[]);
       setResponses(r.responses as BResponse[]);
     } catch {
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+    }
+  }
+  async function silentRefresh() {
+    try {
+      const r = await list({ data: { password } });
+      setBroadcasts(r.broadcasts as Broadcast[]);
+      setResponses(r.responses as BResponse[]);
+    } catch {
+      // silently fail on background refresh
     }
   }
   useEffect(() => {
     refresh();
-    const t = window.setInterval(refresh, 8000);
+    const t = window.setInterval(silentRefresh, 30_000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1360,7 +1378,7 @@ function BroadcastsPanel({ password }: { password: string }) {
         ? "Ask users a question, e.g. Which football club do you support?"
         : "Ask users to leave a review (e.g. Please rate your experience)";
 
-  if (loading)
+  if (initialLoading)
     return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
 
   return (
