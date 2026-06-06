@@ -154,13 +154,15 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
       <div
         className={`fixed inset-0 z-[80] transition-opacity duration-300 ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={() => setOpen(false)}
+        style={{ height: "100dvh" }}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
         <aside
           onClick={(e) => e.stopPropagation()}
-          className={`absolute right-0 top-0 flex h-full w-[88%] max-w-[380px] flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
+          style={{ height: "100dvh", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+          className={`absolute right-0 top-0 flex w-[88%] max-w-[380px] flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
         >
-          <header className="flex items-center justify-between border-b border-border px-5 py-4">
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="text-base font-black tracking-tight">Menu</h2>
               <p className="text-[11px] text-muted-foreground">Quick actions & settings</p>
@@ -170,7 +172,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-2" style={{ WebkitOverflowScrolling: "touch" }}>
             <Group label="Library">
               <Row icon={Clock} onClick={() => goTab("library", "continue")}>Continue watching</Row>
               <Row icon={Bookmark} onClick={() => goTab("library", "watchlist")}>Watchlist</Row>
@@ -205,7 +207,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
             </Group>
           </div>
 
-          <footer className="border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
+          <footer className="shrink-0 border-t border-border px-5 py-3 text-center text-[11px] text-muted-foreground">
             LACZEK STREAM · v3
           </footer>
         </aside>
