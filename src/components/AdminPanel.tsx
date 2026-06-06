@@ -45,7 +45,7 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts" | "changelog";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -214,6 +214,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             ["daily", "Daily"],
             ["config", "Flags & Events"],
             ["broadcasts", "Broadcasts"],
+            ["changelog", "Fixes & Features"],
           ] as Array<[Tab, string]>
         ).map(([k, l]) => (
           <button
@@ -364,6 +365,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         {tab === "config" && <ConfigPanel password={password} />}
 
         {tab === "broadcasts" && <BroadcastsPanel password={password} />}
+
+        {tab === "changelog" && <ChangelogPanel password={password} />}
       </div>
     </div>
   );
