@@ -11,9 +11,22 @@ const listSchema = z.object({
   name: z.string().nullable().optional(),
 });
 
+type BroadcastRow = { id: string; kind: string; message: string; target_name: string | null; created_at: string };
+
 export const listMyBroadcasts = createServerFn({ method: "POST" })
   .inputValidator((d) => listSchema.parse(d))
   .handler(async ({ data }) => {
+    // Account-age gate: visitors whose session is < 2h old never see broadcasts.
+    // This prevents pop-ups (including review prompts) firing on brand-new accounts.
+    const { data: visitor } = await supabaseAdmin
+      .from("visitor_sessions")
+      .select("started_at")
+      .eq("session_key", data.session_key)
+      .maybeSingle();
+    if (!visitor?.started_at) return { items: [] as BroadcastRow[] };
+    const ageMs = Date.now() - new Date(visitor.started_at as string).getTime();
+    if (ageMs < 2 * 60 * 60 * 1000) return { items: [] as BroadcastRow[] };
+
     const { data: rows, error } = await supabaseAdmin
       .from("admin_broadcasts")
       .select("id,kind,message,target_name,created_at")
