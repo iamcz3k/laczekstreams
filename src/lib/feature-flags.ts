@@ -55,16 +55,56 @@ export function useFeatureFlag(key: string, fallback = true): boolean {
     const apply = () => {
       loadFlags().then((m) => {
         if (cancelled) return;
-        if (key in m) setEnabled(m[key]); else setEnabled(fallback);
+        if (key in m) setEnabled(m[key]);
+        else setEnabled(fallback);
       });
     };
     apply();
     listeners.add(apply);
     // Re-check periodically so public visitors pick up admin toggles without reload.
     const t = window.setInterval(apply, TTL_MS);
-    return () => { cancelled = true; listeners.delete(apply); window.clearInterval(t); };
+    return () => {
+      cancelled = true;
+      listeners.delete(apply);
+      window.clearInterval(t);
+    };
   }, [key, fallback]);
   return enabled;
+}
+
+export function useDefaultMovieServer(): string | null {
+  const [server, setServer] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const apply = () => {
+      loadFlags().then((m) => {
+        if (cancelled) return;
+        if (m["default_movie_server"]) {
+          // The provider ID is stored in the description field; fetch it directly.
+          supabase
+            .from("feature_flags")
+            .select("description")
+            .eq("key", "default_movie_server")
+            .single()
+            .then(({ data }) => {
+              if (!cancelled && data?.description) setServer(data.description);
+              else if (!cancelled) setServer(null);
+            });
+        } else {
+          setServer(null);
+        }
+      });
+    };
+    apply();
+    listeners.add(apply);
+    const t = window.setInterval(apply, TTL_MS);
+    return () => {
+      cancelled = true;
+      listeners.delete(apply);
+      window.clearInterval(t);
+    };
+  }, []);
+  return server;
 }
 
 export async function loadActiveEvents(): Promise<FeaturedEvent[]> {

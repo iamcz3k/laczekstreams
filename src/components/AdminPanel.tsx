@@ -1,7 +1,34 @@
 import { useEffect, useRef, useState } from "react";
-import { Activity, Globe2, Lock, Search, Users, Clock, TrendingUp, X, RefreshCcw, ArrowLeft, Calendar, User, Flag, Megaphone, Plus, Trash2 } from "lucide-react";
+import {
+  Activity,
+  Globe2,
+  Lock,
+  Search,
+  Users,
+  Clock,
+  TrendingUp,
+  X,
+  RefreshCcw,
+  ArrowLeft,
+  Calendar,
+  User,
+  Flag,
+  Megaphone,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { adminFetchAnalytics, adminListConfig, adminSetFeatureFlag, adminUpsertFeaturedEvent, adminDeleteFeaturedEvent, adminAddFeatureFlag, adminUploadEventPoster } from "@/lib/admin.functions";
+import {
+  adminFetchAnalytics,
+  adminListConfig,
+  adminSetFeatureFlag,
+  adminUpsertFeaturedEvent,
+  adminDeleteFeaturedEvent,
+  adminAddFeatureFlag,
+  adminUploadEventPoster,
+  adminSetDefaultServer,
+} from "@/lib/admin.functions";
+import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
 import { FlagPicker } from "@/components/FlagPicker";
@@ -21,7 +48,11 @@ function fmtDur(sec: number) {
 
 function streamLinkFromPath(path?: string | null): { href: string; label: string } | null {
   if (!path) return null;
-  if (path.startsWith("/watch/") || path.startsWith("/football-stream/") || path.startsWith("/anime/")) {
+  if (
+    path.startsWith("/watch/") ||
+    path.startsWith("/football-stream/") ||
+    path.startsWith("/anime/")
+  ) {
     return { href: path, label: path };
   }
   return null;
@@ -53,9 +84,13 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
-  async function submit(e: React.FormEvent) { e.preventDefault(); await load(password); }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    await load(password);
+  }
 
-  const pwRef = useRef(password); pwRef.current = password;
+  const pwRef = useRef(password);
+  pwRef.current = password;
   useEffect(() => {
     if (!authed) return;
     const t = window.setInterval(() => load(pwRef.current), 5000);
@@ -64,15 +99,46 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
   if (!authed) {
     return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl" onClick={onClose}>
-        <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-3xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl">
-          <div className="mb-4 flex items-center gap-2"><Lock className="h-5 w-5 text-primary" /><h3 className="text-lg font-bold">DEV OPTIONS</h3></div>
-          <p className="mb-3 text-xs text-muted-foreground">Restricted area. Enter admin password.</p>
-          <input type="password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary" />
+      <div
+        className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl"
+        onClick={onClose}
+      >
+        <form
+          onSubmit={submit}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-sm rounded-3xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl"
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">DEV OPTIONS</h3>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Restricted area. Enter admin password.
+          </p>
+          <input
+            type="password"
+            autoFocus
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+          />
           {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
-            <button type="submit" disabled={loading} className="flex-1 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">{loading ? "Checking…" : "Unlock"}</button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-full border border-border px-4 py-2 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+            >
+              {loading ? "Checking…" : "Unlock"}
+            </button>
           </div>
         </form>
       </div>
@@ -82,11 +148,20 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   if (!data) return null;
 
   // Drill-down: session detail
-  if (openSession) return <SessionDetail s={openSession} onBack={() => setOpenSession(null)} onClose={onClose} />;
+  if (openSession)
+    return <SessionDetail s={openSession} onBack={() => setOpenSession(null)} onClose={onClose} />;
   // Drill-down: account detail
   if (openAccount) {
     const userSessions = data.sessions.filter((s: any) => (s.name || "Anonymous") === openAccount);
-    return <AccountDetail name={openAccount} sessions={userSessions} onOpenSession={setOpenSession} onBack={() => setOpenAccount(null)} onClose={onClose} />;
+    return (
+      <AccountDetail
+        name={openAccount}
+        sessions={userSessions}
+        onOpenSession={setOpenSession}
+        onBack={() => setOpenAccount(null)}
+        onClose={onClose}
+      />
+    );
   }
 
   return (
@@ -95,25 +170,39 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold">DEV OPTIONS</h2>
-          <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Live</span>
+          <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+            Live
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => load(password)} className="rounded-full bg-secondary p-2"><RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
-          <button onClick={onClose} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+          <button onClick={() => load(password)} className="rounded-full bg-secondary p-2">
+            <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button onClick={onClose} className="rounded-full bg-secondary p-2">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b border-border bg-popover/60 px-2 py-2">
-        {([
-          ["overview", "Overview"],
-          ["watched", "Top Watched"],
-          ["searches", "Top Searches"],
-          ["visitors", "Visitor Log"],
-          ["accounts", "Accounts"],
-          ["daily", "Daily"],
-          ["config", "Flags & Events"],
-        ] as Array<[Tab, string]>).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{l}</button>
+        {(
+          [
+            ["overview", "Overview"],
+            ["watched", "Top Watched"],
+            ["searches", "Top Searches"],
+            ["visitors", "Visitor Log"],
+            ["accounts", "Accounts"],
+            ["daily", "Daily"],
+            ["config", "Flags & Events"],
+          ] as Array<[Tab, string]>
+        ).map(([k, l]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${tab === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+          >
+            {l}
+          </button>
         ))}
       </div>
 
@@ -123,7 +212,11 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             <Stat icon={Users} label="Online now" value={data.onlineNow} accent />
             <Stat icon={Globe2} label="Total visits" value={data.totalVisits} />
             <Stat icon={Clock} label="Avg time" value={fmtDur(data.avgDuration)} />
-            <Stat icon={TrendingUp} label="Top country" value={data.topCountries[0]?.country || "—"} />
+            <Stat
+              icon={TrendingUp}
+              label="Top country"
+              value={data.topCountries[0]?.country || "—"}
+            />
             <Stat icon={Calendar} label="Today visits" value={data.dailyVisits[0]?.visits || 0} />
             <Stat icon={Calendar} label="Yesterday" value={data.dailyVisits[1]?.visits || 0} />
             <Stat icon={Users} label="Accounts" value={data.accounts.length} />
@@ -135,13 +228,27 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           <div className="space-y-5">
             {(["movie", "tv", "anime", "football"] as const).map((kind) => {
               const list = data.topByKind[kind] || [];
-              const label = kind === "movie" ? "Top movies" : kind === "tv" ? "Top series" : kind === "anime" ? "Top anime" : "Top football matches";
+              const label =
+                kind === "movie"
+                  ? "Top movies"
+                  : kind === "tv"
+                    ? "Top series"
+                    : kind === "anime"
+                      ? "Top anime"
+                      : "Top football matches";
               return (
                 <Section key={kind} title={label} icon={TrendingUp}>
-                  {list.length === 0 ? <Empty /> : (
+                  {list.length === 0 ? (
+                    <Empty />
+                  ) : (
                     <ul className="divide-y divide-border">
                       {list.map((w, i) => {
-                        const watchers = data.sessions.filter((s: any) => (Array.isArray(s.watched) ? s.watched as Array<{kind?:string; id?:string}> : []).some((x) => x.kind === kind && x.id === w.id));
+                        const watchers = data.sessions.filter((s: any) =>
+                          (Array.isArray(s.watched)
+                            ? (s.watched as Array<{ kind?: string; id?: string }>)
+                            : []
+                          ).some((x) => x.kind === kind && x.id === w.id),
+                        );
                         return (
                           <li key={i} className="py-2 text-sm">
                             <div className="flex items-center justify-between">
@@ -149,7 +256,14 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
                               <span className="font-bold text-primary">×{w.count}</span>
                             </div>
                             {watchers.length > 0 && (
-                              <p className="mt-1 text-xs text-muted-foreground">Watched by: {watchers.slice(0, 5).map((s: any) => s.name || "Anonymous").join(", ")}{watchers.length > 5 ? ` +${watchers.length - 5}` : ""}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Watched by:{" "}
+                                {watchers
+                                  .slice(0, 5)
+                                  .map((s: any) => s.name || "Anonymous")
+                                  .join(", ")}
+                                {watchers.length > 5 ? ` +${watchers.length - 5}` : ""}
+                              </p>
                             )}
                           </li>
                         );
@@ -164,10 +278,15 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "searches" && (
           <Section title="Top searches" icon={Search}>
-            {data.topSearches.length === 0 ? <Empty /> : (
+            {data.topSearches.length === 0 ? (
+              <Empty />
+            ) : (
               <ul className="divide-y divide-border">
                 {data.topSearches.map((s, i) => (
-                  <li key={i} className="flex items-center justify-between py-2 text-sm"><span className="truncate">{s.q}</span><span className="font-bold text-primary">×{s.count}</span></li>
+                  <li key={i} className="flex items-center justify-between py-2 text-sm">
+                    <span className="truncate">{s.q}</span>
+                    <span className="font-bold text-primary">×{s.count}</span>
+                  </li>
                 ))}
               </ul>
             )}
@@ -180,16 +299,33 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
               const link = streamLinkFromPath(s.current_path);
               return (
-                <button key={s.id} onClick={() => setOpenSession(s)} className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary">
+                <button
+                  key={s.id}
+                  onClick={() => setOpenSession(s)}
+                  className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
+                >
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`} />
+                      <span
+                        className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
+                      />
                       <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
-                      <span className="text-muted-foreground">· {s.country || "?"}{s.city ? `, ${s.city}` : ""}</span>
+                      <span className="text-muted-foreground">
+                        · {s.country || "?"}
+                        {s.city ? `, ${s.city}` : ""}
+                      </span>
                     </div>
                     <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
                   </div>
-                  <p className="text-muted-foreground">{s.device} · {s.page_views} views{link ? <> · watching <span className="text-primary">{link.label}</span></> : null}</p>
+                  <p className="text-muted-foreground">
+                    {s.device} · {s.page_views} views
+                    {link ? (
+                      <>
+                        {" "}
+                        · watching <span className="text-primary">{link.label}</span>
+                      </>
+                    ) : null}
+                  </p>
                   <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
                 </button>
               );
@@ -200,9 +336,18 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         {tab === "accounts" && (
           <div className="space-y-2">
             {data.accounts.map((a) => (
-              <button key={a.name} onClick={() => setOpenAccount(a.name)} className="flex w-full items-center justify-between rounded-xl border border-border bg-secondary/40 p-3 text-left text-sm transition hover:border-primary">
-                <div className="flex items-center gap-2"><User className="h-4 w-4 text-primary" /><span className="font-bold">{a.name}</span></div>
-                <div className="text-xs text-muted-foreground">{a.sessions} session{a.sessions !== 1 ? "s" : ""} · {fmtDur(a.totalSeconds)}</div>
+              <button
+                key={a.name}
+                onClick={() => setOpenAccount(a.name)}
+                className="flex w-full items-center justify-between rounded-xl border border-border bg-secondary/40 p-3 text-left text-sm transition hover:border-primary"
+              >
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="font-bold">{a.name}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {a.sessions} session{a.sessions !== 1 ? "s" : ""} · {fmtDur(a.totalSeconds)}
+                </div>
               </button>
             ))}
             {data.accounts.length === 0 && <Empty />}
@@ -211,12 +356,16 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
 
         {tab === "daily" && (
           <Section title="Visits per day (last 14 days)" icon={Calendar}>
-            {data.dailyVisits.length === 0 ? <Empty /> : (
+            {data.dailyVisits.length === 0 ? (
+              <Empty />
+            ) : (
               <ul className="divide-y divide-border">
                 {data.dailyVisits.map((d) => (
                   <li key={d.day} className="flex items-center justify-between py-2 text-sm">
                     <span>{d.day}</span>
-                    <span className="text-muted-foreground">{d.visits} visits · {d.minutes} min</span>
+                    <span className="text-muted-foreground">
+                      {d.visits} visits · {d.minutes} min
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -224,56 +373,120 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
           </Section>
         )}
 
-        {tab === "config" && (
-          <ConfigPanel password={password} />
-        )}
+        {tab === "config" && <ConfigPanel password={password} />}
       </div>
     </div>
   );
 }
 
-function SessionDetail({ s, onBack, onClose }: { s: Session; onBack: () => void; onClose: () => void }) {
-  const watched = Array.isArray(s.watched) ? (s.watched as Array<{ kind?: string; title?: string; id?: string; at?: string }>) : [];
-  const log = Array.isArray((s as unknown as { path_log?: unknown[] }).path_log) ? ((s as unknown as { path_log: Array<{ path?: string; label?: string; at?: string }> }).path_log) : [];
+function SessionDetail({
+  s,
+  onBack,
+  onClose,
+}: {
+  s: Session;
+  onBack: () => void;
+  onClose: () => void;
+}) {
+  const watched = Array.isArray(s.watched)
+    ? (s.watched as Array<{ kind?: string; title?: string; id?: string; at?: string }>)
+    : [];
+  const log = Array.isArray((s as unknown as { path_log?: unknown[] }).path_log)
+    ? (s as unknown as { path_log: Array<{ path?: string; label?: string; at?: string }> }).path_log
+    : [];
   const link = streamLinkFromPath(s.current_path);
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-background text-foreground">
       <div className="flex items-center justify-between border-b border-border bg-popover px-4 py-3">
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></button>
+          <button onClick={onBack} className="rounded-full bg-secondary p-2">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <h2 className="text-base font-bold">{s.name || "Anonymous"}</h2>
         </div>
-        <button onClick={onClose} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+        <button onClick={onClose} className="rounded-full bg-secondary p-2">
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4 pb-24">
         <div className="rounded-2xl border border-border bg-secondary/40 p-3 text-xs">
-          <p><span className="text-muted-foreground">Country:</span> {s.country || "?"}{s.city ? `, ${s.city}` : ""}</p>
-          <p><span className="text-muted-foreground">Device:</span> {s.device}</p>
-          <p><span className="text-muted-foreground">Started:</span> {new Date(s.started_at).toLocaleString()}</p>
-          <p><span className="text-muted-foreground">Last seen:</span> {new Date(s.last_seen_at).toLocaleString()}</p>
-          <p><span className="text-muted-foreground">Time spent:</span> {fmtDur(s.duration_seconds || 0)}</p>
-          <p><span className="text-muted-foreground">Page views:</span> {s.page_views}</p>
-          {link && <p><span className="text-muted-foreground">Currently on:</span> <a href={link.href} target="_blank" rel="noreferrer" className="text-primary underline">{link.label}</a></p>}
+          <p>
+            <span className="text-muted-foreground">Country:</span> {s.country || "?"}
+            {s.city ? `, ${s.city}` : ""}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Device:</span> {s.device}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Started:</span>{" "}
+            {new Date(s.started_at).toLocaleString()}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Last seen:</span>{" "}
+            {new Date(s.last_seen_at).toLocaleString()}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Time spent:</span>{" "}
+            {fmtDur(s.duration_seconds || 0)}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Page views:</span> {s.page_views}
+          </p>
+          {link && (
+            <p>
+              <span className="text-muted-foreground">Currently on:</span>{" "}
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                {link.label}
+              </a>
+            </p>
+          )}
         </div>
         <Section title={`Activity (${log.length})`} icon={Activity}>
-          {log.length === 0 ? <Empty /> : (
+          {log.length === 0 ? (
+            <Empty />
+          ) : (
             <ul className="space-y-1 text-xs">
               {log.map((l, i) => (
-                <li key={i} className="flex items-start justify-between gap-2 border-b border-border/50 py-1.5">
-                  <span><span className="font-medium">{l.label || l.path}</span>{l.path && l.path !== l.label ? <span className="ml-1 text-muted-foreground">({l.path})</span> : null}</span>
-                  <span className="text-muted-foreground">{l.at ? new Date(l.at).toLocaleTimeString() : ""}</span>
+                <li
+                  key={i}
+                  className="flex items-start justify-between gap-2 border-b border-border/50 py-1.5"
+                >
+                  <span>
+                    <span className="font-medium">{l.label || l.path}</span>
+                    {l.path && l.path !== l.label ? (
+                      <span className="ml-1 text-muted-foreground">({l.path})</span>
+                    ) : null}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {l.at ? new Date(l.at).toLocaleTimeString() : ""}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </Section>
         <Section title={`Watched (${watched.length})`} icon={TrendingUp}>
-          {watched.length === 0 ? <Empty /> : (
+          {watched.length === 0 ? (
+            <Empty />
+          ) : (
             <ul className="space-y-1 text-xs">
               {watched.map((w, i) => (
-                <li key={i} className="flex items-start justify-between gap-2 border-b border-border/50 py-1.5">
-                  <span>Played <span className="font-medium">{w.title || w.id}</span> <span className="text-muted-foreground">({w.kind})</span></span>
-                  <span className="text-muted-foreground">{w.at ? new Date(w.at).toLocaleString() : ""}</span>
+                <li
+                  key={i}
+                  className="flex items-start justify-between gap-2 border-b border-border/50 py-1.5"
+                >
+                  <span>
+                    Played <span className="font-medium">{w.title || w.id}</span>{" "}
+                    <span className="text-muted-foreground">({w.kind})</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {w.at ? new Date(w.at).toLocaleString() : ""}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -284,9 +497,25 @@ function SessionDetail({ s, onBack, onClose }: { s: Session; onBack: () => void;
   );
 }
 
-function AccountDetail({ name, sessions, onOpenSession, onBack, onClose }: { name: string; sessions: Session[]; onOpenSession: (s: Session) => void; onBack: () => void; onClose: () => void }) {
+function AccountDetail({
+  name,
+  sessions,
+  onOpenSession,
+  onBack,
+  onClose,
+}: {
+  name: string;
+  sessions: Session[];
+  onOpenSession: (s: Session) => void;
+  onBack: () => void;
+  onClose: () => void;
+}) {
   const totalSec = sessions.reduce((a, s) => a + (s.duration_seconds || 0), 0);
-  const allWatched = sessions.flatMap((s) => Array.isArray(s.watched) ? (s.watched as Array<{kind?:string; title?:string; id?:string; at?:string}>) : []);
+  const allWatched = sessions.flatMap((s) =>
+    Array.isArray(s.watched)
+      ? (s.watched as Array<{ kind?: string; title?: string; id?: string; at?: string }>)
+      : [],
+  );
   const finishedMovies = allWatched.filter((w) => w.kind === "movie");
   const seenSeries = new Map<string, { title: string; episodes: Set<string> }>();
   for (const w of allWatched) {
@@ -301,10 +530,14 @@ function AccountDetail({ name, sessions, onOpenSession, onBack, onClose }: { nam
     <div className="fixed inset-0 z-[90] flex flex-col bg-background text-foreground">
       <div className="flex items-center justify-between border-b border-border bg-popover px-4 py-3">
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="rounded-full bg-secondary p-2"><ArrowLeft className="h-4 w-4" /></button>
+          <button onClick={onBack} className="rounded-full bg-secondary p-2">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <h2 className="text-base font-bold">{name}</h2>
         </div>
-        <button onClick={onClose} className="rounded-full bg-secondary p-2"><X className="h-4 w-4" /></button>
+        <button onClick={onClose} className="rounded-full bg-secondary p-2">
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4 pb-24">
         <div className="grid grid-cols-2 gap-3">
@@ -314,10 +547,15 @@ function AccountDetail({ name, sessions, onOpenSession, onBack, onClose }: { nam
           <Stat icon={TrendingUp} label="Series" value={seenSeries.size} />
         </div>
         <Section title="Series progress" icon={TrendingUp}>
-          {seenSeries.size === 0 ? <Empty /> : (
+          {seenSeries.size === 0 ? (
+            <Empty />
+          ) : (
             <ul className="space-y-1 text-xs">
               {Array.from(seenSeries.values()).map((v, i) => (
-                <li key={i} className="flex items-center justify-between border-b border-border/50 py-1.5">
+                <li
+                  key={i}
+                  className="flex items-center justify-between border-b border-border/50 py-1.5"
+                >
                   <span className="font-medium">{v.title}</span>
                   <span className="text-muted-foreground">{v.episodes.size} episodes</span>
                 </li>
@@ -327,8 +565,14 @@ function AccountDetail({ name, sessions, onOpenSession, onBack, onClose }: { nam
         </Section>
         <Section title="Sessions" icon={Activity}>
           {sessions.map((s) => (
-            <button key={s.id} onClick={() => onOpenSession(s)} className="mb-2 flex w-full items-center justify-between rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs hover:border-primary">
-              <span>{new Date(s.started_at).toLocaleString()} · {s.country || "?"}</span>
+            <button
+              key={s.id}
+              onClick={() => onOpenSession(s)}
+              className="mb-2 flex w-full items-center justify-between rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs hover:border-primary"
+            >
+              <span>
+                {new Date(s.started_at).toLocaleString()} · {s.country || "?"}
+              </span>
               <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
             </button>
           ))}
@@ -338,19 +582,45 @@ function AccountDetail({ name, sessions, onOpenSession, onBack, onClose }: { nam
   );
 }
 
-function Stat({ icon: Icon, label, value, accent }: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode; accent?: boolean }) {
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  accent?: boolean;
+}) {
   return (
-    <div className={`rounded-2xl border p-3 ${accent ? "border-primary/40 bg-primary/10" : "border-border bg-secondary/40"}`}>
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Icon className="h-3.5 w-3.5" />{label}</div>
+    <div
+      className={`rounded-2xl border p-3 ${accent ? "border-primary/40 bg-primary/10" : "border-border bg-secondary/40"}`}
+    >
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
       <div className="mt-1 text-xl font-black">{value}</div>
     </div>
   );
 }
 
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+function Section({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mt-5">
-      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold"><Icon className="h-4 w-4 text-primary" />{title}</h3>
+      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold">
+        <Icon className="h-4 w-4 text-primary" />
+        {title}
+      </h3>
       <div className="rounded-2xl border border-border bg-popover p-3">{children}</div>
     </div>
   );
@@ -358,12 +628,23 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.C
 
 type CfgFlag = { key: string; enabled: boolean; description: string | null };
 type CfgEvent = {
-  id: string; title: string; subtitle: string | null; image_url: string | null;
-  link_url: string; kind: string; starts_at: string | null; ends_at: string | null;
-  priority: number; active: boolean;
-  sport: string | null; home_team: string | null; away_team: string | null;
-  home_flag: string | null; away_flag: string | null;
-  timer_mode: "none" | "countdown" | "countup" | null; timer_target_at: string | null;
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image_url: string | null;
+  link_url: string;
+  kind: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  priority: number;
+  active: boolean;
+  sport: string | null;
+  home_team: string | null;
+  away_team: string | null;
+  home_flag: string | null;
+  away_flag: string | null;
+  timer_mode: "none" | "countdown" | "countup" | null;
+  timer_target_at: string | null;
 };
 
 function ConfigPanel({ password }: { password: string }) {
@@ -373,6 +654,7 @@ function ConfigPanel({ password }: { password: string }) {
   const upsertEvent = useServerFn(adminUpsertFeaturedEvent);
   const deleteEvent = useServerFn(adminDeleteFeaturedEvent);
   const uploadPoster = useServerFn(adminUploadEventPoster);
+  const setDefaultServer = useServerFn(adminSetDefaultServer);
   const [flags, setFlags] = useState<CfgFlag[]>([]);
   const [events, setEvents] = useState<CfgEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -380,51 +662,74 @@ function ConfigPanel({ password }: { password: string }) {
   const [newFlagDesc, setNewFlagDesc] = useState("");
   const [editing, setEditing] = useState<Partial<CfgEvent> | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [defaultServer, setDefaultServerState] = useState<string>("videasy");
+  const [defaultServerEnabled, setDefaultServerEnabled] = useState(false);
 
   async function refresh() {
     setLoading(true);
-    try { const r = await list({ data: { password } }); setFlags(r.flags as CfgFlag[]); setEvents(r.events as CfgEvent[]); }
-    catch {} finally { setLoading(false); }
+    try {
+      const r = await list({ data: { password } });
+      setFlags(r.flags as CfgFlag[]);
+      setEvents(r.events as CfgEvent[]);
+      const serverFlag = (r.flags as CfgFlag[]).find((f) => f.key === "default_movie_server");
+      if (serverFlag) {
+        setDefaultServerEnabled(serverFlag.enabled);
+        if (serverFlag.description) setDefaultServerState(serverFlag.description);
+      }
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   }
-  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line */
+  }, []);
 
   async function toggleFlag(key: string, enabled: boolean) {
-    setFlags((arr) => arr.map((f) => f.key === key ? { ...f, enabled } : f));
+    setFlags((arr) => arr.map((f) => (f.key === key ? { ...f, enabled } : f)));
     await setFlag({ data: { password, key, enabled } });
     refreshFeatureFlags();
   }
   async function createFlag() {
     if (!newFlagKey.trim()) return;
-    await addFlag({ data: { password, key: newFlagKey.trim(), description: newFlagDesc.trim() || undefined } });
-    setNewFlagKey(""); setNewFlagDesc(""); refresh();
+    await addFlag({
+      data: { password, key: newFlagKey.trim(), description: newFlagDesc.trim() || undefined },
+    });
+    setNewFlagKey("");
+    setNewFlagDesc("");
+    refresh();
   }
   async function saveEvent() {
     if (!editing?.title || !editing?.link_url) return;
-    await upsertEvent({ data: {
-      password,
-      id: editing.id,
-      title: editing.title!,
-      subtitle: editing.subtitle ?? undefined,
-      image_url: editing.image_url ?? undefined,
-      link_url: editing.link_url!,
-      kind: editing.kind || "general",
-      starts_at: editing.starts_at ?? null,
-      ends_at: editing.ends_at ?? null,
-      priority: editing.priority ?? 0,
-      active: editing.active ?? true,
-      sport: editing.sport ?? null,
-      home_team: editing.home_team ?? null,
-      away_team: editing.away_team ?? null,
-      home_flag: editing.home_flag ?? null,
-      away_flag: editing.away_flag ?? null,
-      timer_mode: editing.timer_mode ?? "none",
-      timer_target_at: editing.timer_target_at ?? null,
-    } });
-    setEditing(null); refresh();
+    await upsertEvent({
+      data: {
+        password,
+        id: editing.id,
+        title: editing.title!,
+        subtitle: editing.subtitle ?? undefined,
+        image_url: editing.image_url ?? undefined,
+        link_url: editing.link_url!,
+        kind: editing.kind || "general",
+        starts_at: editing.starts_at ?? null,
+        ends_at: editing.ends_at ?? null,
+        priority: editing.priority ?? 0,
+        active: editing.active ?? true,
+        sport: editing.sport ?? null,
+        home_team: editing.home_team ?? null,
+        away_team: editing.away_team ?? null,
+        home_flag: editing.home_flag ?? null,
+        away_flag: editing.away_flag ?? null,
+        timer_mode: editing.timer_mode ?? "none",
+        timer_target_at: editing.timer_target_at ?? null,
+      },
+    });
+    setEditing(null);
+    refresh();
   }
   async function removeEvent(id: string) {
     if (!confirm("Delete this featured event?")) return;
-    await deleteEvent({ data: { password, id } }); refresh();
+    await deleteEvent({ data: { password, id } });
+    refresh();
   }
 
   async function handlePosterFile(file: File) {
@@ -446,10 +751,50 @@ function ConfigPanel({ password }: { password: string }) {
     }
   }
 
+  async function saveDefaultServer(provider: string, enabled: boolean) {
+    setDefaultServerState(provider);
+    setDefaultServerEnabled(enabled);
+    await setDefaultServer({ data: { password, provider, enabled } });
+    refreshFeatureFlags();
+  }
+
   if (loading) return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
 
   return (
     <div className="space-y-6">
+      <Section title="Default movie server" icon={Globe2}>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Set the default embed server that all users will see when opening a movie or TV show
+          player. Users can still switch servers manually.
+        </p>
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-bold">Enable default override</span>
+          <button
+            onClick={() => saveDefaultServer(defaultServer, !defaultServerEnabled)}
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${defaultServerEnabled ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+          >
+            {defaultServerEnabled ? "ON" : "OFF"}
+          </button>
+        </div>
+        <select
+          value={defaultServer}
+          onChange={(ev) => saveDefaultServer(ev.target.value, defaultServerEnabled)}
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        >
+          {EMBED_PROVIDERS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label} ({p.id})
+            </option>
+          ))}
+        </select>
+        {defaultServerEnabled && (
+          <p className="mt-2 text-xs text-primary font-bold">
+            Active: all public movie players will default to "
+            {EMBED_PROVIDERS.find((p) => p.id === defaultServer)?.label || defaultServer}"
+          </p>
+        )}
+      </Section>
+
       <Section title="Feature flags" icon={Flag}>
         <ul className="divide-y divide-border">
           {flags.map((f) => (
@@ -461,31 +806,78 @@ function ConfigPanel({ password }: { password: string }) {
               <button
                 onClick={() => toggleFlag(f.key, !f.enabled)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${f.enabled ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
-              >{f.enabled ? "ON" : "OFF"}</button>
+              >
+                {f.enabled ? "ON" : "OFF"}
+              </button>
             </li>
           ))}
         </ul>
         <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl border border-border bg-secondary/40 p-3 sm:grid-cols-[1fr_1fr_auto]">
-          <input value={newFlagKey} onChange={(e) => setNewFlagKey(e.target.value)} placeholder="new_flag_key" className="rounded-lg bg-background px-3 py-2 text-xs" />
-          <input value={newFlagDesc} onChange={(e) => setNewFlagDesc(e.target.value)} placeholder="Description" className="rounded-lg bg-background px-3 py-2 text-xs" />
-          <button onClick={createFlag} className="inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"><Plus className="h-3 w-3" /> Add</button>
+          <input
+            value={newFlagKey}
+            onChange={(e) => setNewFlagKey(e.target.value)}
+            placeholder="new_flag_key"
+            className="rounded-lg bg-background px-3 py-2 text-xs"
+          />
+          <input
+            value={newFlagDesc}
+            onChange={(e) => setNewFlagDesc(e.target.value)}
+            placeholder="Description"
+            className="rounded-lg bg-background px-3 py-2 text-xs"
+          />
+          <button
+            onClick={createFlag}
+            className="inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </button>
         </div>
       </Section>
 
       <Section title="Featured events" icon={Megaphone}>
-        <button onClick={() => setEditing({ kind: "general", priority: 0, active: true })} className="mb-3 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"><Plus className="h-3 w-3" /> New event</button>
-        {events.length === 0 ? <Empty /> : (
+        <button
+          onClick={() => setEditing({ kind: "general", priority: 0, active: true })}
+          className="mb-3 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+        >
+          <Plus className="h-3 w-3" /> New event
+        </button>
+        {events.length === 0 ? (
+          <Empty />
+        ) : (
           <ul className="divide-y divide-border">
             {events.map((e) => (
               <li key={e.id} className="flex items-center gap-3 py-2">
-                {e.image_url ? <img src={e.image_url} alt="" className="h-10 w-16 rounded object-cover" /> : <div className="h-10 w-16 rounded bg-secondary" />}
+                {e.image_url ? (
+                  <img src={e.image_url} alt="" className="h-10 w-16 rounded object-cover" />
+                ) : (
+                  <div className="h-10 w-16 rounded bg-secondary" />
+                )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{e.title} <span className="ml-1 text-[10px] text-muted-foreground">· {e.kind} · p{e.priority}</span></p>
+                  <p className="truncate text-sm font-bold">
+                    {e.title}{" "}
+                    <span className="ml-1 text-[10px] text-muted-foreground">
+                      · {e.kind} · p{e.priority}
+                    </span>
+                  </p>
                   <p className="truncate text-[11px] text-muted-foreground">{e.link_url}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${e.active ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>{e.active ? "live" : "off"}</span>
-                <button onClick={() => setEditing(e)} className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[11px]">Edit</button>
-                <button onClick={() => removeEvent(e.id)} className="shrink-0 rounded-full bg-secondary p-1.5 text-destructive"><Trash2 className="h-3 w-3" /></button>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${e.active ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}
+                >
+                  {e.active ? "live" : "off"}
+                </span>
+                <button
+                  onClick={() => setEditing(e)}
+                  className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[11px]"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => removeEvent(e.id)}
+                  className="shrink-0 rounded-full bg-secondary p-1.5 text-destructive"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
               </li>
             ))}
           </ul>
@@ -496,29 +888,89 @@ function ConfigPanel({ password }: { password: string }) {
         <UploadVideoForm password={password} />
       </Section>
 
-
       {editing && (
-        <div className="fixed inset-0 z-[95] flex items-start justify-center bg-black/85 p-4 overflow-y-auto" onClick={() => setEditing(null)}>
-          <div onClick={(ev) => ev.stopPropagation()} className="w-full max-w-md max-h-[85vh] space-y-3 overflow-y-auto rounded-3xl border border-border bg-popover p-5 my-auto">
+        <div
+          className="fixed inset-0 z-[95] flex items-start justify-center bg-black/85 p-4 overflow-y-auto"
+          onClick={() => setEditing(null)}
+        >
+          <div
+            onClick={(ev) => ev.stopPropagation()}
+            className="w-full max-w-md max-h-[85vh] space-y-3 overflow-y-auto rounded-3xl border border-border bg-popover p-5 my-auto"
+          >
             <h3 className="text-base font-bold">{editing.id ? "Edit event" : "New event"}</h3>
-            <input value={editing.title || ""} onChange={(ev) => setEditing({ ...editing, title: ev.target.value })} placeholder="Title *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
-            <input value={editing.subtitle || ""} onChange={(ev) => setEditing({ ...editing, subtitle: ev.target.value })} placeholder="Subtitle" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <input
+              value={editing.title || ""}
+              onChange={(ev) => setEditing({ ...editing, title: ev.target.value })}
+              placeholder="Title *"
+              className="w-full rounded-xl bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={editing.subtitle || ""}
+              onChange={(ev) => setEditing({ ...editing, subtitle: ev.target.value })}
+              placeholder="Subtitle"
+              className="w-full rounded-xl bg-background px-3 py-2 text-sm"
+            />
             <div className="space-y-2">
-              <input value={editing.image_url || ""} onChange={(ev) => setEditing({ ...editing, image_url: ev.target.value })} placeholder="Image URL (or upload below)" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+              <input
+                value={editing.image_url || ""}
+                onChange={(ev) => setEditing({ ...editing, image_url: ev.target.value })}
+                placeholder="Image URL (or upload below)"
+                className="w-full rounded-xl bg-background px-3 py-2 text-sm"
+              />
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-3 py-3 text-xs font-bold text-muted-foreground hover:border-primary hover:text-foreground">
-                {uploading ? "Uploading…" : (editing.image_url ? "Replace poster image" : "Upload poster image")}
-                <input type="file" accept="image/*" className="hidden" onChange={(ev) => { const f = ev.target.files?.[0]; if (f) handlePosterFile(f); }} />
+                {uploading
+                  ? "Uploading…"
+                  : editing.image_url
+                    ? "Replace poster image"
+                    : "Upload poster image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(ev) => {
+                    const f = ev.target.files?.[0];
+                    if (f) handlePosterFile(f);
+                  }}
+                />
               </label>
-              {editing.image_url && <img src={editing.image_url} alt="" className="h-24 w-full rounded-lg object-cover" />}
+              {editing.image_url && (
+                <img
+                  src={editing.image_url}
+                  alt=""
+                  className="h-24 w-full rounded-lg object-cover"
+                />
+              )}
             </div>
-            <input value={editing.link_url || ""} onChange={(ev) => setEditing({ ...editing, link_url: ev.target.value })} placeholder="Link (/watch/movie/123 or https://…) *" className="w-full rounded-xl bg-background px-3 py-2 text-sm" />
+            <input
+              value={editing.link_url || ""}
+              onChange={(ev) => setEditing({ ...editing, link_url: ev.target.value })}
+              placeholder="Link (/watch/movie/123 or https://…) *"
+              className="w-full rounded-xl bg-background px-3 py-2 text-sm"
+            />
             <div className="grid grid-cols-2 gap-2">
-              <input value={editing.kind || ""} onChange={(ev) => setEditing({ ...editing, kind: ev.target.value })} placeholder="Kind (match/premiere/…)" className="rounded-xl bg-background px-3 py-2 text-sm" />
-              <input type="number" value={editing.priority ?? 0} onChange={(ev) => setEditing({ ...editing, priority: Number(ev.target.value) })} placeholder="Priority" className="rounded-xl bg-background px-3 py-2 text-sm" />
+              <input
+                value={editing.kind || ""}
+                onChange={(ev) => setEditing({ ...editing, kind: ev.target.value })}
+                placeholder="Kind (match/premiere/…)"
+                className="rounded-xl bg-background px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                value={editing.priority ?? 0}
+                onChange={(ev) => setEditing({ ...editing, priority: Number(ev.target.value) })}
+                placeholder="Priority"
+                className="rounded-xl bg-background px-3 py-2 text-sm"
+              />
             </div>
             <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Match / teams (optional)</p>
-              <select value={editing.sport || ""} onChange={(ev) => setEditing({ ...editing, sport: ev.target.value || null })} className="w-full rounded-lg bg-background px-3 py-2 text-xs">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Match / teams (optional)
+              </p>
+              <select
+                value={editing.sport || ""}
+                onChange={(ev) => setEditing({ ...editing, sport: ev.target.value || null })}
+                className="w-full rounded-lg bg-background px-3 py-2 text-xs"
+              >
                 <option value="">— Sport —</option>
                 <option value="Soccer">⚽ Soccer</option>
                 <option value="Basketball">🏀 Basketball</option>
@@ -532,32 +984,118 @@ function ConfigPanel({ password }: { password: string }) {
                 <option value="Rugby">🏉 Rugby</option>
               </select>
               <div className="grid grid-cols-2 gap-2">
-                <input value={editing.home_team || ""} onChange={(ev) => setEditing({ ...editing, home_team: ev.target.value })} placeholder="Home team" className="rounded-lg bg-background px-3 py-2 text-xs" />
-                <input value={editing.away_team || ""} onChange={(ev) => setEditing({ ...editing, away_team: ev.target.value })} placeholder="Away team" className="rounded-lg bg-background px-3 py-2 text-xs" />
+                <input
+                  value={editing.home_team || ""}
+                  onChange={(ev) => setEditing({ ...editing, home_team: ev.target.value })}
+                  placeholder="Home team"
+                  className="rounded-lg bg-background px-3 py-2 text-xs"
+                />
+                <input
+                  value={editing.away_team || ""}
+                  onChange={(ev) => setEditing({ ...editing, away_team: ev.target.value })}
+                  placeholder="Away team"
+                  className="rounded-lg bg-background px-3 py-2 text-xs"
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <FlagPicker value={editing.home_flag} onChange={(c) => setEditing({ ...editing, home_flag: c })} placeholder="Home flag" />
-                <FlagPicker value={editing.away_flag} onChange={(c) => setEditing({ ...editing, away_flag: c })} placeholder="Away flag" />
+                <FlagPicker
+                  value={editing.home_flag}
+                  onChange={(c) => setEditing({ ...editing, home_flag: c })}
+                  placeholder="Home flag"
+                />
+                <FlagPicker
+                  value={editing.away_flag}
+                  onChange={(c) => setEditing({ ...editing, away_flag: c })}
+                  placeholder="Away flag"
+                />
               </div>
-              <p className="text-[10px] text-muted-foreground">Tip: paste a badge URL (https://…) into the flag field to use a club logo instead of a country flag.</p>
+              <p className="text-[10px] text-muted-foreground">
+                Tip: paste a badge URL (https://…) into the flag field to use a club logo instead of
+                a country flag.
+              </p>
               <div className="grid grid-cols-2 gap-2">
-                <input value={editing.home_flag && editing.home_flag.startsWith("http") ? editing.home_flag : ""} onChange={(ev) => setEditing({ ...editing, home_flag: ev.target.value || null })} placeholder="…or home badge URL" className="rounded-lg bg-background px-3 py-2 text-xs" />
-                <input value={editing.away_flag && editing.away_flag.startsWith("http") ? editing.away_flag : ""} onChange={(ev) => setEditing({ ...editing, away_flag: ev.target.value || null })} placeholder="…or away badge URL" className="rounded-lg bg-background px-3 py-2 text-xs" />
+                <input
+                  value={
+                    editing.home_flag && editing.home_flag.startsWith("http")
+                      ? editing.home_flag
+                      : ""
+                  }
+                  onChange={(ev) => setEditing({ ...editing, home_flag: ev.target.value || null })}
+                  placeholder="…or home badge URL"
+                  className="rounded-lg bg-background px-3 py-2 text-xs"
+                />
+                <input
+                  value={
+                    editing.away_flag && editing.away_flag.startsWith("http")
+                      ? editing.away_flag
+                      : ""
+                  }
+                  onChange={(ev) => setEditing({ ...editing, away_flag: ev.target.value || null })}
+                  placeholder="…or away badge URL"
+                  className="rounded-lg bg-background px-3 py-2 text-xs"
+                />
               </div>
             </div>
             <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Live timer (shown publicly)</p>
-              <select value={editing.timer_mode || "none"} onChange={(ev) => setEditing({ ...editing, timer_mode: ev.target.value as "none"|"countdown"|"countup" })} className="w-full rounded-lg bg-background px-3 py-2 text-xs">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Live timer (shown publicly)
+              </p>
+              <select
+                value={editing.timer_mode || "none"}
+                onChange={(ev) =>
+                  setEditing({
+                    ...editing,
+                    timer_mode: ev.target.value as "none" | "countdown" | "countup",
+                  })
+                }
+                className="w-full rounded-lg bg-background px-3 py-2 text-xs"
+              >
                 <option value="none">No timer</option>
                 <option value="countdown">Countdown to event</option>
                 <option value="countup">Count up from event</option>
               </select>
-              <input type="datetime-local" value={editing.timer_target_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, timer_target_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="w-full rounded-lg bg-background px-3 py-2 text-xs" />
-              <p className="text-[10px] text-muted-foreground">Falls back to Start time if no target is set.</p>
+              <input
+                type="datetime-local"
+                value={editing.timer_target_at?.slice(0, 16) || ""}
+                onChange={(ev) =>
+                  setEditing({
+                    ...editing,
+                    timer_target_at: ev.target.value
+                      ? new Date(ev.target.value).toISOString()
+                      : null,
+                  })
+                }
+                className="w-full rounded-lg bg-background px-3 py-2 text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Falls back to Start time if no target is set.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <input type="datetime-local" value={editing.starts_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Starts" />
-              <input type="datetime-local" value={editing.ends_at?.slice(0,16) || ""} onChange={(ev) => setEditing({ ...editing, ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null })} className="rounded-xl bg-background px-3 py-2 text-xs" placeholder="Ends" />
+              <input
+                type="datetime-local"
+                value={editing.starts_at?.slice(0, 16) || ""}
+                onChange={(ev) =>
+                  setEditing({
+                    ...editing,
+                    starts_at: ev.target.value ? new Date(ev.target.value).toISOString() : null,
+                  })
+                }
+                className="rounded-xl bg-background px-3 py-2 text-xs"
+                placeholder="Starts"
+              />
+              <input
+                type="datetime-local"
+                value={editing.ends_at?.slice(0, 16) || ""}
+                onChange={(ev) =>
+                  setEditing({
+                    ...editing,
+                    ends_at: ev.target.value ? new Date(ev.target.value).toISOString() : null,
+                  })
+                }
+                className="rounded-xl bg-background px-3 py-2 text-xs"
+                placeholder="Ends"
+              />
             </div>
             <button
               type="button"
@@ -568,14 +1106,32 @@ function ConfigPanel({ password }: { password: string }) {
                   : "border-border bg-secondary/40 text-muted-foreground"
               }`}
             >
-              <span>{(editing.active ?? true) ? "🟢 Live — visible to public" : "⚪ Off — hidden from public"}</span>
-              <span className={`relative inline-flex h-5 w-9 rounded-full transition ${(editing.active ?? true) ? "bg-primary" : "bg-border"}`}>
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${(editing.active ?? true) ? "left-[18px]" : "left-0.5"}`} />
+              <span>
+                {(editing.active ?? true)
+                  ? "🟢 Live — visible to public"
+                  : "⚪ Off — hidden from public"}
+              </span>
+              <span
+                className={`relative inline-flex h-5 w-9 rounded-full transition ${(editing.active ?? true) ? "bg-primary" : "bg-border"}`}
+              >
+                <span
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${(editing.active ?? true) ? "left-[18px]" : "left-0.5"}`}
+                />
               </span>
             </button>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setEditing(null)} className="rounded-full bg-secondary px-4 py-2 text-xs">Cancel</button>
-              <button onClick={saveEvent} className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Save</button>
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-full bg-secondary px-4 py-2 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEvent}
+                className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -584,4 +1140,6 @@ function ConfigPanel({ password }: { password: string }) {
   );
 }
 
-function Empty() { return <p className="py-3 text-center text-xs text-muted-foreground">No data yet</p>; }
+function Empty() {
+  return <p className="py-3 text-center text-xs text-muted-foreground">No data yet</p>;
+}

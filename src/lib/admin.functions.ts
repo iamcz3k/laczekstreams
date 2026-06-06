@@ -7,7 +7,12 @@ const ADMIN_PASSWORD = "czek2991";
 
 export const adminSetFeatureFlag = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string; key: string; enabled: boolean }) => {
-    if (typeof input?.password !== "string" || typeof input?.key !== "string" || typeof input?.enabled !== "boolean") throw new Error("Invalid input");
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.key !== "string" ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
     return input;
   })
   .handler(async ({ data }) => {
@@ -30,6 +35,35 @@ export const adminAddFeatureFlag = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("feature_flags")
       .insert({ key: data.key, description: data.description ?? null, enabled: true });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ===== Default movie server =====
+
+export const adminSetDefaultServer = createServerFn({ method: "POST" })
+  .inputValidator((input: { password: string; provider: string; enabled: boolean }) => {
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.provider !== "string" ||
+      typeof input?.enabled !== "boolean"
+    )
+      throw new Error("Invalid input");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    const { error } = await supabaseAdmin
+      .from("feature_flags")
+      .upsert(
+        {
+          key: "default_movie_server",
+          enabled: data.enabled,
+          description: data.provider,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -59,7 +93,8 @@ export type FeaturedEventInput = {
 
 export const adminUpsertFeaturedEvent = createServerFn({ method: "POST" })
   .inputValidator((input: FeaturedEventInput) => {
-    if (typeof input?.password !== "string" || !input?.title || !input?.link_url) throw new Error("Invalid input");
+    if (typeof input?.password !== "string" || !input?.title || !input?.link_url)
+      throw new Error("Invalid input");
     return input;
   })
   .handler(async ({ data }) => {
@@ -125,7 +160,11 @@ export const adminListConfig = createServerFn({ method: "POST" })
 
 export const adminUploadEventPoster = createServerFn({ method: "POST" })
   .inputValidator((input: { password: string; filename: string; dataUrl: string }) => {
-    if (typeof input?.password !== "string" || typeof input?.dataUrl !== "string" || !input.dataUrl.startsWith("data:")) {
+    if (
+      typeof input?.password !== "string" ||
+      typeof input?.dataUrl !== "string" ||
+      !input.dataUrl.startsWith("data:")
+    ) {
       throw new Error("Invalid input");
     }
     return input;
@@ -148,8 +187,9 @@ export const adminUploadEventPoster = createServerFn({ method: "POST" })
     // Bucket is private (workspace blocks public buckets). Issue a long-lived
     // signed URL so the public site can render the poster image.
     const TEN_YEARS = 60 * 60 * 24 * 365 * 10;
-    const { data: signed, error: signErr } = await supabaseAdmin
-      .storage.from("event-posters").createSignedUrl(path, TEN_YEARS);
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("event-posters")
+      .createSignedUrl(path, TEN_YEARS);
     if (signErr || !signed?.signedUrl) throw new Error(signErr?.message || "Could not sign URL");
     return { url: signed.signedUrl };
   });
@@ -181,13 +221,19 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     // Aggregate
     const watchCount = new Map<string, { title: string; kind: string; count: number }>();
     const watchByKind: Record<string, Map<string, { title: string; count: number }>> = {
-      movie: new Map(), tv: new Map(), anime: new Map(), football: new Map(),
+      movie: new Map(),
+      tv: new Map(),
+      anime: new Map(),
+      football: new Map(),
     };
     const searchCount = new Map<string, number>();
     const countryCount = new Map<string, number>();
     const dayCount = new Map<string, number>(); // YYYY-MM-DD => visits
     const dayMinutes = new Map<string, number>();
-    const accounts = new Map<string, { name: string; sessions: number; lastSeen: string; totalSeconds: number }>();
+    const accounts = new Map<
+      string,
+      { name: string; sessions: number; lastSeen: string; totalSeconds: number }
+    >();
 
     for (const s of sessions || []) {
       if (s.country) countryCount.set(s.country, (countryCount.get(s.country) || 0) + 1);
@@ -195,13 +241,20 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       dayCount.set(day, (dayCount.get(day) || 0) + 1);
       dayMinutes.set(day, (dayMinutes.get(day) || 0) + Math.round((s.duration_seconds || 0) / 60));
       const accName = (s.name || "Anonymous").trim() || "Anonymous";
-      const a = accounts.get(accName) || { name: accName, sessions: 0, lastSeen: s.last_seen_at, totalSeconds: 0 };
+      const a = accounts.get(accName) || {
+        name: accName,
+        sessions: 0,
+        lastSeen: s.last_seen_at,
+        totalSeconds: 0,
+      };
       a.sessions += 1;
       a.totalSeconds += s.duration_seconds || 0;
       if (new Date(s.last_seen_at) > new Date(a.lastSeen)) a.lastSeen = s.last_seen_at;
       accounts.set(accName, a);
 
-      const watched = Array.isArray(s.watched) ? (s.watched as Array<{ id?: string; title?: string; kind?: string }>) : [];
+      const watched = Array.isArray(s.watched)
+        ? (s.watched as Array<{ id?: string; title?: string; kind?: string }>)
+        : [];
       for (const w of watched) {
         const k = `${w.kind || "?"}:${w.id || "?"}`;
         const cur = watchCount.get(k) || { title: w.title || k, kind: w.kind || "?", count: 0 };
@@ -221,7 +274,9 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
       }
     }
 
-    const topWatched = Array.from(watchCount.values()).sort((a, b) => b.count - a.count).slice(0, 20);
+    const topWatched = Array.from(watchCount.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
     const topByKind = Object.fromEntries(
       Object.entries(watchByKind).map(([k, m]) => [
         k,
@@ -231,8 +286,14 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
           .slice(0, 10),
       ]),
     ) as Record<string, Array<{ id: string; title: string; count: number }>>;
-    const topSearches = Array.from(searchCount.entries()).map(([q, count]) => ({ q, count })).sort((a, b) => b.count - a.count).slice(0, 20);
-    const topCountries = Array.from(countryCount.entries()).map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count).slice(0, 20);
+    const topSearches = Array.from(searchCount.entries())
+      .map(([q, count]) => ({ q, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+    const topCountries = Array.from(countryCount.entries())
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
     const dailyVisits = Array.from(dayCount.entries())
       .map(([day, visits]) => ({ day, visits, minutes: dayMinutes.get(day) || 0 }))
       .sort((a, b) => (a.day < b.day ? 1 : -1))
@@ -240,9 +301,13 @@ export const adminFetchAnalytics = createServerFn({ method: "POST" })
     const accountsList = Array.from(accounts.values()).sort((a, b) => a.name.localeCompare(b.name));
 
     const totalVisits = (sessions || []).length;
-    const avgDuration = totalVisits > 0
-      ? Math.round((sessions || []).reduce((acc: number, s: any) => acc + (s.duration_seconds || 0), 0) / totalVisits)
-      : 0;
+    const avgDuration =
+      totalVisits > 0
+        ? Math.round(
+            (sessions || []).reduce((acc: number, s: any) => acc + (s.duration_seconds || 0), 0) /
+              totalVisits,
+          )
+        : 0;
 
     return {
       sessions: sessions || [],
