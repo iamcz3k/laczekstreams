@@ -1378,7 +1378,7 @@ function BroadcastsPanel({ password }: { password: string }) {
         ? "Ask users a question, e.g. Which football club do you support?"
         : "Ask users to leave a review (e.g. Please rate your experience)";
 
-  if (loading)
+  if (initialLoading)
     return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
 
   return (
