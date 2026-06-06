@@ -85,6 +85,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_changelog: {
+        Row: {
+          active: boolean
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       downloadable_titles: {
         Row: {
           created_at: string

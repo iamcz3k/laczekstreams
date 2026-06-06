@@ -37,6 +37,12 @@ import {
   adminDeleteBroadcast,
   adminToggleBroadcast,
 } from "@/lib/broadcasts.functions";
+import {
+  adminCreateChangelog,
+  adminListChangelog,
+  adminDeleteChangelog,
+  adminToggleChangelog,
+} from "@/lib/changelog-admin.functions";
 import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
@@ -45,7 +51,7 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts" | "changelog";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -214,6 +220,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             ["daily", "Daily"],
             ["config", "Flags & Events"],
             ["broadcasts", "Broadcasts"],
+            ["changelog", "Fixes & Features"],
           ] as Array<[Tab, string]>
         ).map(([k, l]) => (
           <button
@@ -364,6 +371,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         {tab === "config" && <ConfigPanel password={password} />}
 
         {tab === "broadcasts" && <BroadcastsPanel password={password} />}
+
+        {tab === "changelog" && <ChangelogPanel password={password} />}
       </div>
     </div>
   );
@@ -1512,6 +1521,181 @@ function BroadcastsPanel({ password }: { password: string }) {
           </ul>
         )}
       </Section>
+    </div>
+  );
+}
+
+// ===== Fixes & Features (changelog) admin panel =====
+
+type ChangelogRow = {
+  id: string;
+  kind: "new" | "fix" | "improved" | "soon";
+  title: string;
+  detail: string | null;
+  active: boolean;
+  published_at: string;
+};
+
+function ChangelogPanel({ password }: { password: string }) {
+  const listFn = useServerFn(adminListChangelog);
+  const createFn = useServerFn(adminCreateChangelog);
+  const delFn = useServerFn(adminDeleteChangelog);
+  const toggleFn = useServerFn(adminToggleChangelog);
+
+  const [items, setItems] = useState<ChangelogRow[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [kind, setKind] = useState<ChangelogRow["kind"]>("new");
+  const [title, setTitle] = useState("");
+  const [detail, setDetail] = useState("");
+
+  async function refresh(silent = false) {
+    try {
+      const r = await listFn({ data: { password } });
+      setItems(r.items as ChangelogRow[]);
+    } catch (e) {
+      if (!silent) setError((e as Error).message || "Failed to load");
+    } finally {
+      if (!silent) setInitialLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+    const t = window.setInterval(() => refresh(true), 30_000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function publish(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await createFn({ data: { password, kind, title: title.trim(), detail: detail.trim() || null } });
+      setTitle("");
+      setDetail("");
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message || "Could not publish");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this entry? Users won't see it again.")) return;
+    await delFn({ data: { password, id } });
+    setItems((arr) => arr.filter((i) => i.id !== id));
+  }
+
+  async function toggle(id: string, active: boolean) {
+    await toggleFn({ data: { password, id, active } });
+    setItems((arr) => arr.map((i) => (i.id === id ? { ...i, active } : i)));
+  }
+
+  const kindStyle: Record<ChangelogRow["kind"], string> = {
+    new: "bg-primary text-primary-foreground",
+    fix: "bg-emerald-500 text-white",
+    improved: "bg-blue-500 text-white",
+    soon: "bg-amber-500 text-white",
+  };
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={publish} className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+        <h3 className="text-sm font-black uppercase tracking-widest">Publish update</h3>
+        <p className="text-xs text-muted-foreground">
+          Every visitor sees this as a dismissible popup. They can also revisit it in the "What's new" menu.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(["new", "fix", "improved", "soon"] as ChangelogRow["kind"][]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKind(k)}
+              className={`rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-widest transition ${
+                kind === k ? kindStyle[k] : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Short title (e.g. Faster downloads)"
+          maxLength={120}
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          required
+        />
+        <textarea
+          value={detail}
+          onChange={(e) => setDetail(e.target.value)}
+          rows={3}
+          placeholder="Optional details for users"
+          maxLength={2000}
+          className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <button
+          type="submit"
+          disabled={busy || !title.trim()}
+          className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" /> {busy ? "Publishing…" : "Publish to users"}
+        </button>
+      </form>
+
+      <div>
+        <h3 className="mb-2 text-sm font-black uppercase tracking-widest">Published</h3>
+        {initialLoading ? (
+          <p className="text-xs text-muted-foreground">Loading…</p>
+        ) : items.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Nothing published yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {items.map((c) => (
+              <li
+                key={c.id}
+                className={`rounded-2xl border border-border bg-secondary/30 p-4 ${c.active ? "" : "opacity-50"}`}
+              >
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[c.kind]}`}>
+                    {c.kind.toUpperCase()}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {new Date(c.published_at).toLocaleString()}
+                  </span>
+                  {!c.active && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase">Hidden</span>
+                  )}
+                </div>
+                <p className="text-sm font-bold">{c.title}</p>
+                {c.detail && <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{c.detail}</p>}
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => toggle(c.id, !c.active)}
+                    className="rounded-full bg-secondary px-3 py-1.5 text-[11px] font-bold"
+                  >
+                    {c.active ? "Hide from users" : "Show again"}
+                  </button>
+                  <button
+                    onClick={() => remove(c.id)}
+                    className="flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1.5 text-[11px] font-bold text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
