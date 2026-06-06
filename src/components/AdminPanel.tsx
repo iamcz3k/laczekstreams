@@ -1317,26 +1317,34 @@ function BroadcastsPanel({ password }: { password: string }) {
   const toggle = useServerFn(adminToggleBroadcast);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [responses, setResponses] = useState<BResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [kind, setKind] = useState<"notification" | "question" | "review">("notification");
   const [msg, setMsg] = useState("");
   const [target, setTarget] = useState("");
   const [sending, setSending] = useState(false);
 
   async function refresh() {
-    setLoading(true);
     try {
       const r = await list({ data: { password } });
       setBroadcasts(r.broadcasts as Broadcast[]);
       setResponses(r.responses as BResponse[]);
     } catch {
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+    }
+  }
+  async function silentRefresh() {
+    try {
+      const r = await list({ data: { password } });
+      setBroadcasts(r.broadcasts as Broadcast[]);
+      setResponses(r.responses as BResponse[]);
+    } catch {
+      // silently fail on background refresh
     }
   }
   useEffect(() => {
     refresh();
-    const t = window.setInterval(refresh, 8000);
+    const t = window.setInterval(silentRefresh, 30_000);
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
