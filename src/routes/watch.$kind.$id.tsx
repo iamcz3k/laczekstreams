@@ -1,6 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, BookmarkCheck, Download, Expand, Loader2, Maximize2, Play, RefreshCw, PictureInPicture2, SkipForward, FastForward } from "lucide-react";
+import {
+  ArrowLeft,
+  Bookmark,
+  BookmarkCheck,
+  Download,
+  Expand,
+  Loader2,
+  Maximize2,
+  Play,
+  RefreshCw,
+  PictureInPicture2,
+  SkipForward,
+  FastForward,
+} from "lucide-react";
 import {
   EMBED_PROVIDERS,
   QUALITY_OPTIONS,
@@ -20,18 +33,35 @@ import { TitleDetails } from "@/components/TitleDetails";
 import { downloadToDevice } from "@/lib/native-download";
 import { downloadHistory } from "@/lib/download-history";
 import { getBrowserDownloadUrl } from "@/lib/downloads.functions";
+import { useDefaultMovieServer } from "@/lib/feature-flags";
 
 export const Route = createFileRoute("/watch/$kind/$id")({
   component: WatchPage,
   loader: async ({ params }) => {
     const k = params.kind === "tv" ? "tv" : "movie";
     const id = Number(params.id);
-    if (!Number.isFinite(id)) return { title: null as string | null, overview: null as string | null, poster: null as string | null, kind: k };
+    if (!Number.isFinite(id))
+      return {
+        title: null as string | null,
+        overview: null as string | null,
+        poster: null as string | null,
+        kind: k,
+      };
     try {
       const m = await tmdbDetail(k, id);
-      return { title: m?.title ?? null, overview: m?.overview ?? null, poster: m?.poster ?? null, kind: k };
+      return {
+        title: m?.title ?? null,
+        overview: m?.overview ?? null,
+        poster: m?.poster ?? null,
+        kind: k,
+      };
     } catch {
-      return { title: null as string | null, overview: null as string | null, poster: null as string | null, kind: k };
+      return {
+        title: null as string | null,
+        overview: null as string | null,
+        poster: null as string | null,
+        kind: k,
+      };
     }
   },
   head: ({ params, loaderData }) => {
@@ -39,9 +69,11 @@ export const Route = createFileRoute("/watch/$kind/$id")({
     const label = k === "tv" ? "series" : "movie";
     const name = loaderData?.title || `${k === "tv" ? "Series" : "Movie"} #${params.id}`;
     const title = `Watch ${name} online free — LACZEK STREAM`.slice(0, 60);
-    const desc = (loaderData?.overview
-      ? `Watch ${name} online for free. ${loaderData.overview}`
-      : `Watch ${name} (${label}) online for free on LACZEK STREAM — no ads, instant play.`).slice(0, 158);
+    const desc = (
+      loaderData?.overview
+        ? `Watch ${name} online for free. ${loaderData.overview}`
+        : `Watch ${name} (${label}) online for free on LACZEK STREAM — no ads, instant play.`
+    ).slice(0, 158);
     const url = `https://laczekstream2.lovable.app/watch/${k}/${params.id}`;
     return {
       meta: [
@@ -54,17 +86,19 @@ export const Route = createFileRoute("/watch/$kind/$id")({
         ...(loaderData?.poster ? [{ property: "og:image", content: loaderData.poster }] : []),
       ],
       links: [{ rel: "canonical", href: url }],
-      scripts: [{
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": k === "tv" ? "TVSeries" : "Movie",
-          name,
-          description: loaderData?.overview ?? desc,
-          image: loaderData?.poster ?? undefined,
-          url,
-        }),
-      }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": k === "tv" ? "TVSeries" : "Movie",
+            name,
+            description: loaderData?.overview ?? desc,
+            image: loaderData?.poster ?? undefined,
+            url,
+          }),
+        },
+      ],
     };
   },
 });
@@ -72,13 +106,18 @@ export const Route = createFileRoute("/watch/$kind/$id")({
 async function enterLandscapeFullscreen(element: HTMLElement | null) {
   if (!element) return;
   try {
-    const el = element as HTMLElement & { webkitRequestFullscreen?: () => Promise<void>; webkitEnterFullscreen?: () => void };
+    const el = element as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+      webkitEnterFullscreen?: () => void;
+    };
     if (!document.fullscreenElement) {
       if (el.requestFullscreen) await el.requestFullscreen();
       else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
       else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
     }
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (orientation: string) => Promise<void>;
+    };
     await orientation?.lock?.("landscape");
   } catch {}
 }
@@ -89,7 +128,21 @@ function WatchPage() {
   const playerRef = useRef<HTMLDivElement>(null);
   const mediaKind = kind === "tv" ? "tv" : "movie";
   const mediaId = Number(id);
+  const adminDefaultServer = useDefaultMovieServer();
   const [provider, setProvider] = useState<EmbedProvider>("videasy");
+
+  // Apply admin-configured default server on mount (once loaded)
+  const appliedDefault = useRef(false);
+  useEffect(() => {
+    if (
+      adminDefaultServer &&
+      !appliedDefault.current &&
+      EMBED_PROVIDERS.some((p) => p.id === adminDefaultServer)
+    ) {
+      setProvider(adminDefaultServer as EmbedProvider);
+      appliedDefault.current = true;
+    }
+  }, [adminDefaultServer]);
   const [quality, setQuality] = useState<(typeof QUALITY_OPTIONS)[number]>("720p");
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
@@ -108,17 +161,27 @@ function WatchPage() {
   const [upNextCountdown, setUpNextCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("lz_autoplay_next", autoplayNext ? "1" : "0");
+    if (typeof window !== "undefined")
+      localStorage.setItem("lz_autoplay_next", autoplayNext ? "1" : "0");
   }, [autoplayNext]);
 
   useEffect(() => {
     if (!Number.isFinite(mediaId)) return;
-    tmdbDetail(mediaKind, mediaId).then(setMeta).catch(() => setMeta(null));
+    tmdbDetail(mediaKind, mediaId)
+      .then(setMeta)
+      .catch(() => setMeta(null));
   }, [mediaId, mediaKind]);
 
   useEffect(() => {
     if (!meta) return;
-    setSaved(isInWatchlist({ id: meta.id, kind: meta.type, season: mediaKind === "tv" ? season : undefined, episode: mediaKind === "tv" ? episode : undefined }));
+    setSaved(
+      isInWatchlist({
+        id: meta.id,
+        kind: meta.type,
+        season: mediaKind === "tv" ? season : undefined,
+        episode: mediaKind === "tv" ? episode : undefined,
+      }),
+    );
   }, [meta, season, episode, mediaKind]);
 
   // Track every play (for Continue Watching + History)
@@ -135,7 +198,11 @@ function WatchPage() {
       season: mediaKind === "tv" ? season : undefined,
       episode: mediaKind === "tv" ? episode : undefined,
     });
-    trackWatch({ kind: meta.type, id: String(meta.id), title: meta.title + (mediaKind === "tv" ? ` · S${season}E${episode}` : "") });
+    trackWatch({
+      kind: meta.type,
+      id: String(meta.id),
+      title: meta.title + (mediaKind === "tv" ? ` · S${season}E${episode}` : ""),
+    });
   }, [meta, mediaKind, season, episode]);
 
   useEffect(() => {
@@ -160,7 +227,10 @@ function WatchPage() {
       .finally(() => setLoadingEpisodes(false));
   }, [mediaId, mediaKind, season]);
 
-  const src = useMemo(() => embedUrl(provider, mediaKind, mediaId, season, episode), [episode, mediaId, mediaKind, provider, season]);
+  const src = useMemo(
+    () => embedUrl(provider, mediaKind, mediaId, season, episode),
+    [episode, mediaId, mediaKind, provider, season],
+  );
 
   // Reset playing-detection whenever the iframe source changes
   useEffect(() => {
@@ -218,7 +288,9 @@ function WatchPage() {
     // browsing elsewhere.
     try {
       const iframe = playerRef.current?.querySelector("iframe") as HTMLIFrameElement | null;
-      const anyIframe = iframe as unknown as { requestPictureInPicture?: () => Promise<unknown> } | null;
+      const anyIframe = iframe as unknown as {
+        requestPictureInPicture?: () => Promise<unknown>;
+      } | null;
       if (anyIframe?.requestPictureInPicture) {
         await anyIframe.requestPictureInPicture();
         return;
@@ -260,7 +332,8 @@ function WatchPage() {
     return () => window.clearTimeout(t);
   }, [provider, streamPlaying, src]);
 
-  const baseTitle = meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
+  const baseTitle =
+    meta?.title || (mediaKind === "movie" ? `Movie #${mediaId}` : `Series #${mediaId}`);
   const title = mediaKind === "tv" ? `${baseTitle} · S${season} E${episode}` : baseTitle;
 
   function handleSave() {
@@ -363,12 +436,14 @@ function WatchPage() {
     }
   }
 
-
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-0 py-0 sm:px-6 sm:py-4">
         <header className="mb-4 flex items-center justify-between gap-3 px-4 pt-4 sm:px-0 sm:pt-0">
-          <button onClick={() => navigate({ to: "/" })} className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="inline-flex h-10 items-center gap-2 rounded-full glass px-4 text-sm font-medium transition hover:bg-primary hover:text-primary-foreground"
+          >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           <div className="flex items-center gap-2">
@@ -385,11 +460,17 @@ function WatchPage() {
         </header>
 
         <div className="grid flex-1 gap-4 px-0 sm:px-0 lg:grid-cols-[1fr_340px]">
-          <section ref={playerRef} className="flex w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:min-h-0">
+          <section
+            ref={playerRef}
+            className="flex w-full flex-col overflow-hidden border-border bg-black sm:rounded-[28px] sm:border lg:min-h-0"
+          >
             <div className="glass flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold">{title}</h1>
-                <p className="mt-1 text-xs text-muted-foreground">Movie player · unrestricted iframe · {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Movie player · unrestricted iframe ·{" "}
+                  {EMBED_PROVIDERS.find((item) => item.id === provider)?.label}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {mediaKind === "tv" && nextEpisodeNumber && (
@@ -398,7 +479,8 @@ function WatchPage() {
                     className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground"
                     title={`Next episode (E${nextEpisodeNumber})`}
                   >
-                    <SkipForward className="h-4 w-4" /><span className="hidden sm:inline">Next Ep</span>
+                    <SkipForward className="h-4 w-4" />
+                    <span className="hidden sm:inline">Next Ep</span>
                   </button>
                 )}
                 <button
@@ -407,54 +489,94 @@ function WatchPage() {
                   className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
                   title="Skip recap (+90s)"
                 >
-                  <FastForward className="h-4 w-4" /><span className="hidden sm:inline">Skip Recap</span>
+                  <FastForward className="h-4 w-4" />
+                  <span className="hidden sm:inline">Skip Recap</span>
                 </button>
-                <button onClick={requestPip} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground" title="Picture-in-Picture">
-                  <PictureInPicture2 className="h-4 w-4" /><span className="hidden sm:inline">PiP</span>
+                <button
+                  onClick={requestPip}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground"
+                  title="Picture-in-Picture"
+                >
+                  <PictureInPicture2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">PiP</span>
                 </button>
-                <button onClick={() => setFillMode((v) => !v)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
-                  <Maximize2 className="h-4 w-4" /><span className="hidden sm:inline">{fillMode ? "Fit" : "Fill & Zoom"}</span>
+                <button
+                  onClick={() => setFillMode((v) => !v)}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">{fillMode ? "Fit" : "Fill & Zoom"}</span>
                 </button>
-                <button onClick={() => enterLandscapeFullscreen(playerRef.current)} className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground">
-                  <Expand className="h-4 w-4" /><span className="hidden sm:inline">Fullscreen</span>
+                <button
+                  onClick={() => enterLandscapeFullscreen(playerRef.current)}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-secondary px-3 text-sm transition hover:bg-primary hover:text-primary-foreground"
+                >
+                  <Expand className="h-4 w-4" />
+                  <span className="hidden sm:inline">Fullscreen</span>
                 </button>
               </div>
             </div>
             <div className="relative aspect-video w-full flex-1 lg:aspect-auto lg:min-h-0">
-            <iframe
-              key={`${src}-${quality}`}
-              src={src}
-              title={title}
-              className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-[1.06]" : ""} origin-center transition-transform`}
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              allowFullScreen
-              referrerPolicy="no-referrer"
-            />
-            {upNextCountdown !== null && nextEpisodeNumber && (
-              <div className="absolute bottom-4 right-4 z-10 max-w-xs rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Up Next in {upNextCountdown}s</p>
-                <p className="mt-1 text-sm font-bold">Episode {nextEpisodeNumber}</p>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => { setEpisode(nextEpisodeNumber); setUpNextCountdown(null); }} className="flex-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">Play now</button>
-                  <button onClick={() => setUpNextCountdown(null)} className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">Cancel</button>
+              <iframe
+                key={`${src}-${quality}`}
+                src={src}
+                title={title}
+                className={`absolute inset-0 h-full w-full border-0 ${fillMode ? "scale-[1.06]" : ""} origin-center transition-transform`}
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
+                referrerPolicy="no-referrer"
+              />
+              {upNextCountdown !== null && nextEpisodeNumber && (
+                <div className="absolute bottom-4 right-4 z-10 max-w-xs rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Up Next in {upNextCountdown}s
+                  </p>
+                  <p className="mt-1 text-sm font-bold">Episode {nextEpisodeNumber}</p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEpisode(nextEpisodeNumber);
+                        setUpNextCountdown(null);
+                      }}
+                      className="flex-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                    >
+                      Play now
+                    </button>
+                    <button
+                      onClick={() => setUpNextCountdown(null)}
+                      className="rounded-full bg-secondary px-3 py-1.5 text-xs font-bold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
           </section>
 
           <aside className="space-y-4 overflow-auto px-4 pb-4 sm:px-0 lg:max-h-[calc(100vh-6rem)]">
             <section className="space-y-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Servers</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Servers
+              </h2>
               {mediaKind === "tv" && (
                 <label className="flex items-center justify-between rounded-[18px] border border-border bg-secondary/50 px-3 py-2 text-xs">
                   <span>Auto-play next episode</span>
-                  <input type="checkbox" checked={autoplayNext} onChange={(e) => setAutoplayNext(e.target.checked)} className="h-4 w-4 accent-primary" />
+                  <input
+                    type="checkbox"
+                    checked={autoplayNext}
+                    onChange={(e) => setAutoplayNext(e.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
                 </label>
               )}
               <div className="grid grid-cols-2 gap-2">
                 {EMBED_PROVIDERS.map((item) => (
-                  <button key={item.id} onClick={() => setProvider(item.id)} className={`rounded-[18px] border px-3 py-3 text-sm font-bold transition-all duration-300 ${provider === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                  <button
+                    key={item.id}
+                    onClick={() => setProvider(item.id)}
+                    className={`rounded-[18px] border px-3 py-3 text-sm font-bold transition-all duration-300 ${provider === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}
+                  >
                     {item.label}
                   </button>
                 ))}
@@ -462,49 +584,85 @@ function WatchPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground"><Download className="h-3.5 w-3.5" /> Download</h2>
+              <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                <Download className="h-3.5 w-3.5" /> Download
+              </h2>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={handleDownload}
                   disabled={downloading}
                   className="inline-flex items-center justify-center gap-2 rounded-[18px] bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
                 >
-                  {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                  {downloading ? "Starting…" : `Download ${mediaKind === "tv" ? "Episode" : "Movie"}`}
+                  {downloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  {downloading
+                    ? "Starting…"
+                    : `Download ${mediaKind === "tv" ? "Episode" : "Movie"}`}
                 </button>
-                <p className="text-[11px] text-muted-foreground">Starts a real browser download, so Chrome/Safari shows the file progress in its Downloads panel.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Starts a real browser download, so Chrome/Safari shows the file progress in its
+                  Downloads panel.
+                </p>
               </div>
-
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Quality</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Quality
+              </h2>
               <div className="grid grid-cols-3 gap-2">
                 {QUALITY_OPTIONS.map((item) => (
-                  <button key={item} onClick={() => setQuality(item)} className={`rounded-[18px] border px-3 py-2 text-sm font-bold transition-all duration-300 ${quality === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
+                  <button
+                    key={item}
+                    onClick={() => setQuality(item)}
+                    className={`rounded-[18px] border px-3 py-2 text-sm font-bold transition-all duration-300 ${quality === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}
+                  >
                     {item}
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-muted-foreground">Note: most embed providers stream adaptively and pick quality based on your bandwidth — the selector is a hint to the player.</p>
+              <p className="text-[11px] text-muted-foreground">
+                Note: most embed providers stream adaptively and pick quality based on your
+                bandwidth — the selector is a hint to the player.
+              </p>
             </section>
 
             {mediaKind === "tv" && (
               <section className="space-y-3">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Episodes</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                  Episodes
+                </h2>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {seasons.map((item) => (
-                    <button key={item.seasonNumber} onClick={() => setSeason(item.seasonNumber)} className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${season === item.seasonNumber ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"}`}>
+                    <button
+                      key={item.seasonNumber}
+                      onClick={() => setSeason(item.seasonNumber)}
+                      className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${season === item.seasonNumber ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"}`}
+                    >
                       S{item.seasonNumber}
                     </button>
                   ))}
                 </div>
-                {loadingEpisodes ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : (
+                {loadingEpisodes ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {episodes.map((item) => (
-                      <button key={item.id} onClick={() => setEpisode(item.episodeNumber)} className={`rounded-[18px] border p-3 text-left text-sm transition-all duration-300 ${episode === item.episodeNumber ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}>
-                        <span className="flex items-center gap-2 font-bold"><Play className="h-3 w-3" fill="currentColor" /> Episode {item.episodeNumber}</span>
-                        <span className="mt-1 line-clamp-2 block text-xs opacity-75">{item.name}</span>
+                      <button
+                        key={item.id}
+                        onClick={() => setEpisode(item.episodeNumber)}
+                        className={`rounded-[18px] border p-3 text-left text-sm transition-all duration-300 ${episode === item.episodeNumber ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/50 hover:border-primary/60"}`}
+                      >
+                        <span className="flex items-center gap-2 font-bold">
+                          <Play className="h-3 w-3" fill="currentColor" /> Episode{" "}
+                          {item.episodeNumber}
+                        </span>
+                        <span className="mt-1 line-clamp-2 block text-xs opacity-75">
+                          {item.name}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -512,7 +670,10 @@ function WatchPage() {
               </section>
             )}
 
-            <button onClick={() => setProvider(EMBED_PROVIDERS[0].id)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-bold transition hover:bg-primary hover:text-primary-foreground">
+            <button
+              onClick={() => setProvider(EMBED_PROVIDERS[0].id)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3 text-sm font-bold transition hover:bg-primary hover:text-primary-foreground"
+            >
               <RefreshCw className="h-4 w-4" /> Retry with Auto
             </button>
           </aside>
@@ -522,24 +683,50 @@ function WatchPage() {
       </div>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl" onClick={() => !downloading && setConfirmOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-3xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl">
+        <div
+          className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4 backdrop-blur-xl"
+          onClick={() => !downloading && setConfirmOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-3xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl"
+          >
             <div className="mb-3 flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Download className="h-5 w-5" />
               </span>
-              <h3 className="text-base font-black">Download {mediaKind === "tv" ? "episode" : "movie"}?</h3>
+              <h3 className="text-base font-black">
+                Download {mediaKind === "tv" ? "episode" : "movie"}?
+              </h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""} will download through your browser, with progress shown in the browser downloads panel.
+              "{meta?.title || "this title"}"{mediaKind === "tv" ? ` · S${season}E${episode}` : ""}{" "}
+              will download through your browser, with progress shown in the browser downloads
+              panel.
             </p>
-            {downloadError && <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">{downloadError}</p>}
+            {downloadError && (
+              <p className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+                {downloadError}
+              </p>
+            )}
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setConfirmOpen(false)} disabled={downloading} className="rounded-full bg-secondary px-4 py-2 text-sm font-bold disabled:opacity-50">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                disabled={downloading}
+                className="rounded-full bg-secondary px-4 py-2 text-sm font-bold disabled:opacity-50"
+              >
                 Cancel
               </button>
-              <button onClick={confirmDownload} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
-                {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <button
+                onClick={confirmDownload}
+                disabled={downloading}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {downloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
                 {downloading ? "Starting…" : "Download"}
               </button>
             </div>
