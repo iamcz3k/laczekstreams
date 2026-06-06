@@ -16,6 +16,9 @@ import {
   Megaphone,
   Plus,
   Trash2,
+  MessageSquare,
+  Star,
+  Send,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -28,6 +31,12 @@ import {
   adminUploadEventPoster,
   adminSetDefaultServer,
 } from "@/lib/admin.functions";
+import {
+  adminCreateBroadcast,
+  adminListBroadcasts,
+  adminDeleteBroadcast,
+  adminToggleBroadcast,
+} from "@/lib/broadcasts.functions";
 import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
@@ -36,7 +45,7 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -194,6 +203,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             ["accounts", "Accounts"],
             ["daily", "Daily"],
             ["config", "Flags & Events"],
+            ["broadcasts", "Broadcasts"],
           ] as Array<[Tab, string]>
         ).map(([k, l]) => (
           <button
