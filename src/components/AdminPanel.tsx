@@ -37,6 +37,12 @@ import {
   adminDeleteBroadcast,
   adminToggleBroadcast,
 } from "@/lib/broadcasts.functions";
+import {
+  adminCreateChangelog,
+  adminListChangelog,
+  adminDeleteChangelog,
+  adminToggleChangelog,
+} from "@/lib/changelog-admin.functions";
 import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
