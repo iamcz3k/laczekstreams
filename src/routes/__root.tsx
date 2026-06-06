@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { BroadcastOverlay } from "@/components/BroadcastOverlay";
 
 import appCss from "../styles.css?url";
 
@@ -151,6 +152,7 @@ function RootComponent() {
   return (
     <>
       <Outlet />
+      <BroadcastOverlay />
       {alert && (
         <div className="fixed bottom-4 left-1/2 z-[200] w-[92%] max-w-md -translate-x-1/2 rounded-2xl border border-primary/40 bg-primary text-primary-foreground shadow-2xl">
           <a href={alert.url} className="flex items-center justify-between gap-3 px-4 py-3">

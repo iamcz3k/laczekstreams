@@ -16,6 +16,9 @@ import {
   Megaphone,
   Plus,
   Trash2,
+  MessageSquare,
+  Star,
+  Send,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -28,6 +31,12 @@ import {
   adminUploadEventPoster,
   adminSetDefaultServer,
 } from "@/lib/admin.functions";
+import {
+  adminCreateBroadcast,
+  adminListBroadcasts,
+  adminDeleteBroadcast,
+  adminToggleBroadcast,
+} from "@/lib/broadcasts.functions";
 import { EMBED_PROVIDERS } from "@/lib/api";
 import { refreshFeatureFlags } from "@/lib/feature-flags";
 import { UploadVideoForm } from "@/components/UploadVideoForm";
@@ -36,7 +45,7 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config";
+type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -194,6 +203,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
             ["accounts", "Accounts"],
             ["daily", "Daily"],
             ["config", "Flags & Events"],
+            ["broadcasts", "Broadcasts"],
           ] as Array<[Tab, string]>
         ).map(([k, l]) => (
           <button
@@ -294,43 +304,11 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
 
         {tab === "visitors" && (
-          <div className="space-y-2">
-            {data.sessions.map((s: any) => {
-              const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
-              const link = streamLinkFromPath(s.current_path);
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setOpenSession(s)}
-                  className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
-                      />
-                      <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
-                      <span className="text-muted-foreground">
-                        · {s.country || "?"}
-                        {s.city ? `, ${s.city}` : ""}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
-                  </div>
-                  <p className="text-muted-foreground">
-                    {s.device} · {s.page_views} views
-                    {link ? (
-                      <>
-                        {" "}
-                        · watching <span className="text-primary">{link.label}</span>
-                      </>
-                    ) : null}
-                  </p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
-                </button>
-              );
-            })}
-          </div>
+          <VisitorsList
+            sessions={data.sessions}
+            password={password}
+            onOpenSession={setOpenSession}
+          />
         )}
 
         {tab === "accounts" && (
@@ -374,6 +352,8 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
 
         {tab === "config" && <ConfigPanel password={password} />}
+
+        {tab === "broadcasts" && <BroadcastsPanel password={password} />}
       </div>
     </div>
   );
@@ -1148,4 +1128,372 @@ function ConfigPanel({ password }: { password: string }) {
 
 function Empty() {
   return <p className="py-3 text-center text-xs text-muted-foreground">No data yet</p>;
+}
+
+// ===== Visitor list with optional inline "Send review" action =====
+function VisitorsList({
+  sessions,
+  password,
+  onOpenSession,
+}: {
+  sessions: Session[];
+  password: string;
+  onOpenSession: (s: Session) => void;
+}) {
+  const listBroadcasts = useServerFn(adminListBroadcasts);
+  const createBroadcast = useServerFn(adminCreateBroadcast);
+  const [reviewedNames, setReviewedNames] = useState<Set<string>>(new Set());
+  const [composeFor, setComposeFor] = useState<string | null>(null);
+  const [composeMsg, setComposeMsg] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function refresh() {
+    try {
+      const r = await listBroadcasts({ data: { password } });
+      const names = new Set<string>();
+      for (const b of r.broadcasts as Array<{ kind: string; target_name: string | null; active: boolean }>) {
+        if (b.kind === "review" && b.target_name) names.add(b.target_name.toLowerCase());
+      }
+      setReviewedNames(names);
+    } catch {}
+  }
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function sendReview(name: string) {
+    if (!composeMsg.trim()) return;
+    setSending(true);
+    try {
+      await createBroadcast({
+        data: { password, kind: "review", message: composeMsg.trim(), target_name: name },
+      });
+      setComposeFor(null);
+      setComposeMsg("");
+      refresh();
+    } catch (e) {
+      alert((e as Error).message || "Failed to send");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {sessions.map((s: any) => {
+        const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
+        const link = streamLinkFromPath(s.current_path);
+        const name = (s.name || "").trim();
+        const alreadyReviewed = !!name && reviewedNames.has(name.toLowerCase());
+        return (
+          <div
+            key={s.id}
+            className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => onOpenSession(s)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onOpenSession(s);
+              }}
+              className="cursor-pointer"
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
+                  />
+                  <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
+                  <span className="text-muted-foreground">
+                    · {s.country || "?"}
+                    {s.city ? `, ${s.city}` : ""}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
+              </div>
+              <p className="text-muted-foreground">
+                {s.device} · {s.page_views} views
+                {link ? (
+                  <>
+                    {" "}
+                    · watching <span className="text-primary">{link.label}</span>
+                  </>
+                ) : null}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
+            </div>
+            {name && !alreadyReviewed && (
+              <div className="mt-2 border-t border-border/50 pt-2">
+                {composeFor === name ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={composeMsg}
+                      onChange={(e) => setComposeMsg(e.target.value)}
+                      placeholder={`Ask ${name} for a review…`}
+                      rows={2}
+                      className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setComposeFor(null);
+                          setComposeMsg("");
+                        }}
+                        className="rounded-full bg-secondary px-3 py-1 text-[11px]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        disabled={sending || !composeMsg.trim()}
+                        onClick={() => sendReview(name)}
+                        className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+                      >
+                        {sending ? "Sending…" : "Send review request"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setComposeFor(name);
+                      setComposeMsg(`Hi ${name}, please leave a review!`);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
+                  >
+                    <Star className="h-3 w-3" /> Send review request
+                  </button>
+                )}
+              </div>
+            )}
+            {alreadyReviewed && (
+              <p className="mt-2 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
+                Review request already sent.
+              </p>
+            )}
+          </div>
+        );
+      })}
+      {sessions.length === 0 && <Empty />}
+    </div>
+  );
+}
+
+// ===== Broadcasts admin panel: notifications, questions, reviews =====
+type Broadcast = {
+  id: string;
+  kind: "notification" | "question" | "review";
+  message: string;
+  target_name: string | null;
+  active: boolean;
+  created_at: string;
+};
+type BResponse = {
+  id: string;
+  broadcast_id: string;
+  session_key: string;
+  name: string | null;
+  response_text: string | null;
+  rating: number | null;
+  dismissed: boolean;
+  created_at: string;
+};
+
+function BroadcastsPanel({ password }: { password: string }) {
+  const list = useServerFn(adminListBroadcasts);
+  const create = useServerFn(adminCreateBroadcast);
+  const del = useServerFn(adminDeleteBroadcast);
+  const toggle = useServerFn(adminToggleBroadcast);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [responses, setResponses] = useState<BResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [kind, setKind] = useState<"notification" | "question" | "review">("notification");
+  const [msg, setMsg] = useState("");
+  const [target, setTarget] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const r = await list({ data: { password } });
+      setBroadcasts(r.broadcasts as Broadcast[]);
+      setResponses(r.responses as BResponse[]);
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    refresh();
+    const t = window.setInterval(refresh, 8000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function send() {
+    if (!msg.trim()) return;
+    setSending(true);
+    try {
+      await create({
+        data: {
+          password,
+          kind,
+          message: msg.trim(),
+          target_name: target.trim() || null,
+        },
+      });
+      setMsg("");
+      setTarget("");
+      refresh();
+    } catch (e) {
+      alert((e as Error).message || "Failed");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const placeholder =
+    kind === "notification"
+      ? "Type your announcement…"
+      : kind === "question"
+        ? "Ask users a question, e.g. Which football club do you support?"
+        : "Ask users to leave a review (e.g. Please rate your experience)";
+
+  if (loading)
+    return <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-6">
+      <Section title="Send broadcast" icon={MessageSquare}>
+        <div className="mb-3 flex gap-2">
+          {(
+            [
+              ["notification", "Notification"],
+              ["question", "Question"],
+              ["review", "Review"],
+            ] as Array<["notification" | "question" | "review", string]>
+          ).map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => setKind(k)}
+              className={`flex-1 rounded-full px-3 py-1.5 text-xs font-bold ${kind === k ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <textarea
+          value={msg}
+          onChange={(e) => setMsg(e.target.value)}
+          placeholder={placeholder}
+          rows={3}
+          className="mb-2 w-full resize-none rounded-xl bg-background px-3 py-2 text-sm"
+        />
+        <input
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          placeholder="Target user name (leave empty for everyone)"
+          className="mb-2 w-full rounded-xl bg-background px-3 py-2 text-sm"
+        />
+        <button
+          disabled={sending || !msg.trim()}
+          onClick={send}
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+        >
+          <Send className="h-3.5 w-3.5" />
+          {sending ? "Sending…" : "Send"}
+        </button>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {kind === "notification"
+            ? "Users will see a popup they can close with the X button."
+            : kind === "question"
+              ? "Users must type an answer to dismiss the popup."
+              : "Users must give 1–5 stars and a 20+ character review. They can't close the popup."}
+        </p>
+      </Section>
+
+      <Section title="Active & past broadcasts" icon={MessageSquare}>
+        {broadcasts.length === 0 ? (
+          <Empty />
+        ) : (
+          <ul className="space-y-3">
+            {broadcasts.map((b) => {
+              const replies = responses.filter((r) => r.broadcast_id === b.id);
+              return (
+                <li key={b.id} className="rounded-xl border border-border bg-secondary/40 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        {b.kind}
+                        {b.target_name ? ` → ${b.target_name}` : " → everyone"}
+                      </p>
+                      <p className="mt-1 truncate text-sm font-semibold">{b.message}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {new Date(b.created_at).toLocaleString()} · {replies.length} response
+                        {replies.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        onClick={async () => {
+                          await toggle({ data: { password, id: b.id, active: !b.active } });
+                          refresh();
+                        }}
+                        className={`rounded-full px-2 py-1 text-[11px] font-bold ${b.active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                      >
+                        {b.active ? "Live" : "Off"}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Delete this broadcast and all responses?")) return;
+                          await del({ data: { password, id: b.id } });
+                          refresh();
+                        }}
+                        className="rounded-full bg-secondary p-1.5 text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {replies.length > 0 && (
+                    <ul className="mt-3 space-y-1.5 border-t border-border/50 pt-2 text-xs">
+                      {replies.map((r) => (
+                        <li key={r.id} className="rounded-lg bg-background/60 px-2 py-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold">{r.name || "Anonymous"}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(r.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          {r.rating ? (
+                            <div className="mt-0.5 flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3 w-3 ${i < (r.rating || 0) ? "fill-yellow-400 stroke-yellow-400" : "stroke-muted-foreground"}`}
+                                />
+                              ))}
+                            </div>
+                          ) : null}
+                          {r.response_text && (
+                            <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                              {r.response_text}
+                            </p>
+                          )}
+                          {!r.response_text && !r.rating && r.dismissed && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">Dismissed</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
+    </div>
+  );
 }
