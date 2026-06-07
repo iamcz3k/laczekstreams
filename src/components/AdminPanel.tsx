@@ -1244,7 +1244,9 @@ function VisitorsList({
       }
       setReviewedNames(names);
       setReviewedSessions(sessionKeys);
-    } catch {}
+    } catch {
+      // Keep the visitor log usable if broadcast history is unavailable.
+    }
   }
   useEffect(() => {
     refresh();
@@ -1277,10 +1279,18 @@ function VisitorsList({
   }
 
   const countries = Array.from(
-    new Set(sessions.map((s) => ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown")),
+    new Set(
+      sessions.map(
+        (s) => ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown",
+      ),
+    ),
   ).sort();
   const devices = Array.from(
-    new Set(sessions.map((s) => ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown")),
+    new Set(
+      sessions.map(
+        (s) => ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown",
+      ),
+    ),
   ).sort();
   const contentTypes: VisitorContentFilter[] = [
     "all",
@@ -1302,7 +1312,8 @@ function VisitorsList({
       (contentFilter === "all" || contentTypeForSession(s) === contentFilter)
     );
   });
-  const filtersActive = countryFilter !== "all" || deviceFilter !== "all" || contentFilter !== "all";
+  const filtersActive =
+    countryFilter !== "all" || deviceFilter !== "all" || contentFilter !== "all";
 
   function clearFilters() {
     setCountryFilter("all");
@@ -1314,9 +1325,14 @@ function VisitorsList({
     <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
       <aside className="rounded-2xl border border-border bg-popover p-3 lg:sticky lg:top-3 lg:self-start">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Filters</p>
+          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+            Filters
+          </p>
           {filtersActive && (
-            <button onClick={clearFilters} className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold">
+            <button
+              onClick={clearFilters}
+              className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold"
+            >
               All users
             </button>
           )}
@@ -1331,7 +1347,9 @@ function VisitorsList({
             >
               <option value="all">All countries</option>
               {countries.map((country) => (
-                <option key={country} value={country}>{country}</option>
+                <option key={country} value={country}>
+                  {country}
+                </option>
               ))}
             </select>
           </label>
@@ -1344,7 +1362,9 @@ function VisitorsList({
             >
               <option value="all">All devices</option>
               {devices.map((device) => (
-                <option key={device} value={device}>{device}</option>
+                <option key={device} value={device}>
+                  {device}
+                </option>
               ))}
             </select>
           </label>
@@ -1368,27 +1388,39 @@ function VisitorsList({
         </p>
       </aside>
       <div className="space-y-2">
-      {filteredSessions.map((s: any) => {
-        const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
-        const link = streamLinkFromPath(s.current_path);
-        const name = (s.name || "").trim();
+        {filteredSessions.map((s) => {
+        const row = s as Session & {
+          id: string;
+          session_key?: string | null;
+          name?: string | null;
+          country?: string | null;
+          city?: string | null;
+          device?: string | null;
+          page_views?: number | null;
+          current_path?: string | null;
+          duration_seconds?: number | null;
+          last_seen_at: string;
+        };
+        const online = Date.now() - new Date(row.last_seen_at).getTime() < 60_000;
+        const link = streamLinkFromPath(row.current_path);
+        const name = (row.name || "").trim();
         const displayName = name || "Anonymous";
-        const composeKey = s.session_key || s.id;
-        const contentType = contentTypeForSession(s);
+        const composeKey = row.session_key || row.id;
+        const contentType = contentTypeForSession(row);
         const alreadyReviewed =
-          (s.session_key && reviewedSessions.has(s.session_key)) ||
+          (row.session_key && reviewedSessions.has(row.session_key)) ||
           (!!name && reviewedNames.has(name.toLowerCase()));
         return (
           <div
-            key={s.id}
+            key={row.id}
             className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
           >
             <div
               role="button"
               tabIndex={0}
-              onClick={() => onOpenSession(s)}
+              onClick={() => onOpenSession(row)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") onOpenSession(s);
+                if (e.key === "Enter" || e.key === " ") onOpenSession(row);
               }}
               className="cursor-pointer"
             >
@@ -1399,14 +1431,14 @@ function VisitorsList({
                   />
                   <span className="font-bold text-foreground">{displayName}</span>
                   <span className="text-muted-foreground">
-                    · {s.country || "?"}
-                    {s.city ? `, ${s.city}` : ""}
+                    · {row.country || "?"}
+                    {row.city ? `, ${row.city}` : ""}
                   </span>
                 </div>
-                <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
+                <span className="text-muted-foreground">{fmtDur(row.duration_seconds || 0)}</span>
               </div>
               <p className="text-muted-foreground">
-                {s.device} · {s.page_views} views
+                {row.device} · {row.page_views} views
                 <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                   {contentFilterLabel(contentType)}
                 </span>
@@ -1442,7 +1474,7 @@ function VisitorsList({
                       </button>
                       <button
                         disabled={sending || !composeMsg.trim()}
-                        onClick={() => sendReview(s)}
+                        onClick={() => sendReview(row)}
                         className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
                       >
                         {sending ? "Sending…" : "Send review request"}
