@@ -1375,7 +1375,11 @@ function VisitorsList({
                 <button
                   key={type}
                   onClick={() => setContentFilter(type)}
-                  className={`rounded-xl px-2 py-1.5 text-left text-[11px] font-bold ${contentFilter === type ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                  className={`rounded-xl px-2 py-1.5 text-left text-[11px] font-bold ${
+                    contentFilter === type
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground"
+                  }`}
                 >
                   {contentFilterLabel(type)}
                 </button>
@@ -1389,32 +1393,32 @@ function VisitorsList({
       </aside>
       <div className="space-y-2">
         {filteredSessions.map((s) => {
-        const row = s as Session & {
-          id: string;
-          session_key?: string | null;
-          name?: string | null;
-          country?: string | null;
-          city?: string | null;
-          device?: string | null;
-          page_views?: number | null;
-          current_path?: string | null;
-          duration_seconds?: number | null;
-          last_seen_at: string;
-        };
-        const online = Date.now() - new Date(row.last_seen_at).getTime() < 60_000;
-        const link = streamLinkFromPath(row.current_path);
-        const name = (row.name || "").trim();
-        const displayName = name || "Anonymous";
-        const composeKey = row.session_key || row.id;
-        const contentType = contentTypeForSession(row);
-        const alreadyReviewed =
-          (row.session_key && reviewedSessions.has(row.session_key)) ||
-          (!!name && reviewedNames.has(name.toLowerCase()));
-        return (
-          <div
-            key={row.id}
-            className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
-          >
+          const row = s as Session & {
+            id: string;
+            session_key?: string | null;
+            name?: string | null;
+            country?: string | null;
+            city?: string | null;
+            device?: string | null;
+            page_views?: number | null;
+            current_path?: string | null;
+            duration_seconds?: number | null;
+            last_seen_at: string;
+          };
+          const online = Date.now() - new Date(row.last_seen_at).getTime() < 60_000;
+          const link = streamLinkFromPath(row.current_path);
+          const name = (row.name || "").trim();
+          const displayName = name || "Anonymous";
+          const composeKey = row.session_key || row.id;
+          const contentType = contentTypeForSession(row);
+          const alreadyReviewed =
+            (row.session_key && reviewedSessions.has(row.session_key)) ||
+            (!!name && reviewedNames.has(name.toLowerCase()));
+          return (
+            <div
+              key={row.id}
+              className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
+            >
             <div
               role="button"
               tabIndex={0}
@@ -1500,9 +1504,9 @@ function VisitorsList({
               </p>
             )}
           </div>
-        );
-      })}
-      {filteredSessions.length === 0 && <Empty />}
+          );
+        })}
+        {filteredSessions.length === 0 && <Empty />}
       </div>
     </div>
   );
