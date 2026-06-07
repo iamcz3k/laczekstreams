@@ -52,7 +52,16 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts" | "changelog";
+type Tab =
+  | "overview"
+  | "watched"
+  | "searches"
+  | "visitors"
+  | "accounts"
+  | "daily"
+  | "config"
+  | "broadcasts"
+  | "changelog";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -72,6 +81,54 @@ function streamLinkFromPath(path?: string | null): { href: string; label: string
     return { href: path, label: path };
   }
   return null;
+}
+
+type VisitorContentFilter =
+  | "all"
+  | "movie"
+  | "series"
+  | "live-sports"
+  | "anime"
+  | "cctv"
+  | "radio"
+  | "podcasts"
+  | "other";
+
+function contentTypeForSession(s: Session): VisitorContentFilter {
+  const path = String((s as { current_path?: string | null }).current_path || "").toLowerCase();
+  const watched = Array.isArray((s as { watched?: unknown[] }).watched)
+    ? (s as { watched: Array<{ kind?: string }> }).watched || []
+    : [];
+  const latestKind = watched[0]?.kind;
+  if (path.startsWith("/watch/movie/") || latestKind === "movie") return "movie";
+  if (path.startsWith("/watch/tv/") || latestKind === "tv") return "series";
+  if (path.startsWith("/football-stream/") || latestKind === "football") return "live-sports";
+  if (path.startsWith("/watch/anime/") || path.startsWith("/anime") || latestKind === "anime")
+    return "anime";
+  if (path.includes("cctv")) return "cctv";
+  if (path.includes("radio")) return "radio";
+  if (path.includes("podcast")) return "podcasts";
+  return "other";
+}
+
+function contentFilterLabel(value: VisitorContentFilter) {
+  return value === "all"
+    ? "All content"
+    : value === "movie"
+      ? "Movies"
+      : value === "series"
+        ? "Series"
+        : value === "live-sports"
+          ? "Live sports"
+          : value === "anime"
+            ? "Anime"
+            : value === "cctv"
+              ? "CCTV"
+              : value === "radio"
+                ? "Radio"
+                : value === "podcasts"
+                  ? "Podcasts"
+                  : "Other tabs";
 }
 
 export function AdminPanel({ onClose }: { onClose: () => void }) {
@@ -677,6 +734,7 @@ function ConfigPanel({ password }: { password: string }) {
         if (serverFlag.description) setDefaultServerState(serverFlag.description);
       }
     } catch {
+      // Keep existing config visible if a background refresh fails.
     } finally {
       setLoading(false);
     }
@@ -1163,31 +1221,53 @@ function VisitorsList({
   const listBroadcasts = useServerFn(adminListBroadcasts);
   const createBroadcast = useServerFn(adminCreateBroadcast);
   const [reviewedNames, setReviewedNames] = useState<Set<string>>(new Set());
+  const [reviewedSessions, setReviewedSessions] = useState<Set<string>>(new Set());
   const [composeFor, setComposeFor] = useState<string | null>(null);
   const [composeMsg, setComposeMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [deviceFilter, setDeviceFilter] = useState("all");
+  const [contentFilter, setContentFilter] = useState<VisitorContentFilter>("all");
 
   async function refresh() {
     try {
       const r = await listBroadcasts({ data: { password } });
       const names = new Set<string>();
-      for (const b of r.broadcasts as Array<{ kind: string; target_name: string | null; active: boolean }>) {
-        if (b.kind === "review" && b.target_name) names.add(b.target_name.toLowerCase());
+      const sessionKeys = new Set<string>();
+      for (const b of r.broadcasts as Array<{
+        kind: string;
+        target_name: string | null;
+        target_session_key?: string | null;
+      }>) {
+        if (b.kind !== "review") continue;
+        if (b.target_session_key) sessionKeys.add(b.target_session_key);
+        else if (b.target_name) names.add(b.target_name.toLowerCase());
       }
       setReviewedNames(names);
-    } catch {}
+      setReviewedSessions(sessionKeys);
+    } catch {
+      // Keep the visitor log usable if broadcast history is unavailable.
+    }
   }
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function sendReview(name: string) {
+  async function sendReview(s: Session) {
     if (!composeMsg.trim()) return;
+    const name = ((s as { name?: string | null }).name || "").trim();
+    const sessionKey = (s as { session_key?: string | null }).session_key || null;
     setSending(true);
     try {
       await createBroadcast({
-        data: { password, kind: "review", message: composeMsg.trim(), target_name: name },
+        data: {
+          password,
+          kind: "review",
+          message: composeMsg.trim(),
+          target_name: name || null,
+          target_session_key: sessionKey,
+        },
       });
       setComposeFor(null);
       setComposeMsg("");
@@ -1199,103 +1279,236 @@ function VisitorsList({
     }
   }
 
+  const countries = Array.from(
+    new Set(
+      sessions.map(
+        (s) => ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown",
+      ),
+    ),
+  ).sort();
+  const devices = Array.from(
+    new Set(
+      sessions.map(
+        (s) => ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown",
+      ),
+    ),
+  ).sort();
+  const contentTypes: VisitorContentFilter[] = [
+    "all",
+    "movie",
+    "series",
+    "live-sports",
+    "anime",
+    "cctv",
+    "radio",
+    "podcasts",
+    "other",
+  ];
+  const filteredSessions = sessions.filter((s) => {
+    const country = ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown";
+    const device = ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown";
+    return (
+      (countryFilter === "all" || country === countryFilter) &&
+      (deviceFilter === "all" || device === deviceFilter) &&
+      (contentFilter === "all" || contentTypeForSession(s) === contentFilter)
+    );
+  });
+  const filtersActive =
+    countryFilter !== "all" || deviceFilter !== "all" || contentFilter !== "all";
+
+  function clearFilters() {
+    setCountryFilter("all");
+    setDeviceFilter("all");
+    setContentFilter("all");
+  }
+
   return (
-    <div className="space-y-2">
-      {sessions.map((s: any) => {
-        const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
-        const link = streamLinkFromPath(s.current_path);
-        const name = (s.name || "").trim();
-        const alreadyReviewed = !!name && reviewedNames.has(name.toLowerCase());
-        return (
-          <div
-            key={s.id}
-            className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
-          >
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenSession(s)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") onOpenSession(s);
-              }}
-              className="cursor-pointer"
+    <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
+      <aside className="rounded-2xl border border-border bg-popover p-3 lg:sticky lg:top-3 lg:self-start">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+            Filters
+          </p>
+          {filtersActive && (
+            <button
+              onClick={clearFilters}
+              className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold"
             >
-              <div className="mb-1 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
-                  />
-                  <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
-                  <span className="text-muted-foreground">
-                    · {s.country || "?"}
-                    {s.city ? `, ${s.city}` : ""}
-                  </span>
-                </div>
-                <span className="text-muted-foreground">{fmtDur(s.duration_seconds || 0)}</span>
-              </div>
-              <p className="text-muted-foreground">
-                {s.device} · {s.page_views} views
-                {link ? (
-                  <>
-                    {" "}
-                    · watching <span className="text-primary">{link.label}</span>
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
+              All users
+            </button>
+          )}
+        </div>
+        <div className="space-y-3">
+          <label className="block text-[11px] font-bold text-muted-foreground">
+            Country
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground"
+            >
+              <option value="all">All countries</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-[11px] font-bold text-muted-foreground">
+            Device
+            <select
+              value={deviceFilter}
+              onChange={(e) => setDeviceFilter(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground"
+            >
+              <option value="all">All devices</option>
+              {devices.map((device) => (
+                <option key={device} value={device}>
+                  {device}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-muted-foreground">Watching / tab</p>
+            <div className="grid grid-cols-2 gap-1 lg:grid-cols-1">
+              {contentTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setContentFilter(type)}
+                  className={`rounded-xl px-2 py-1.5 text-left text-[11px] font-bold ${
+                    contentFilter === type
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {contentFilterLabel(type)}
+                </button>
+              ))}
             </div>
-            {name && !alreadyReviewed && (
-              <div className="mt-2 border-t border-border/50 pt-2">
-                {composeFor === name ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={composeMsg}
-                      onChange={(e) => setComposeMsg(e.target.value)}
-                      placeholder={`Ask ${name} for a review…`}
-                      rows={2}
-                      className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setComposeFor(null);
-                          setComposeMsg("");
-                        }}
-                        className="rounded-full bg-secondary px-3 py-1 text-[11px]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        disabled={sending || !composeMsg.trim()}
-                        onClick={() => sendReview(name)}
-                        className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
-                      >
-                        {sending ? "Sending…" : "Send review request"}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setComposeFor(name);
-                      setComposeMsg(`Hi ${name}, please leave a review!`);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
-                  >
-                    <Star className="h-3 w-3" /> Send review request
-                  </button>
-                )}
-              </div>
-            )}
-            {alreadyReviewed && (
-              <p className="mt-2 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
-                Review request already sent.
-              </p>
-            )}
           </div>
-        );
-      })}
-      {sessions.length === 0 && <Empty />}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Showing {filteredSessions.length} of {sessions.length} visitors.
+        </p>
+      </aside>
+      <div className="space-y-2">
+        {filteredSessions.map((s) => {
+          const row = s as Session & {
+            id: string;
+            session_key?: string | null;
+            name?: string | null;
+            country?: string | null;
+            city?: string | null;
+            device?: string | null;
+            page_views?: number | null;
+            current_path?: string | null;
+            duration_seconds?: number | null;
+            last_seen_at: string;
+          };
+          const online = Date.now() - new Date(row.last_seen_at).getTime() < 60_000;
+          const link = streamLinkFromPath(row.current_path);
+          const name = (row.name || "").trim();
+          const displayName = name || "Anonymous";
+          const composeKey = row.session_key || row.id;
+          const contentType = contentTypeForSession(row);
+          const alreadyReviewed =
+            (row.session_key && reviewedSessions.has(row.session_key)) ||
+            (!!name && reviewedNames.has(name.toLowerCase()));
+          return (
+            <div
+              key={row.id}
+              className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenSession(row)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onOpenSession(row);
+                }}
+                className="cursor-pointer"
+              >
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
+                    />
+                    <span className="font-bold text-foreground">{displayName}</span>
+                    <span className="text-muted-foreground">
+                      · {row.country || "?"}
+                      {row.city ? `, ${row.city}` : ""}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground">{fmtDur(row.duration_seconds || 0)}</span>
+                </div>
+                <p className="text-muted-foreground">
+                  {row.device} · {row.page_views} views
+                  <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                    {contentFilterLabel(contentType)}
+                  </span>
+                  {link ? (
+                    <>
+                      {" "}
+                      · watching <span className="text-primary">{link.label}</span>
+                    </>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
+              </div>
+              {!alreadyReviewed && (
+                <div className="mt-2 border-t border-border/50 pt-2">
+                  {composeFor === composeKey ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={composeMsg}
+                        onChange={(e) => setComposeMsg(e.target.value)}
+                        placeholder={`Ask ${displayName} for a review…`}
+                        rows={2}
+                        className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setComposeFor(null);
+                            setComposeMsg("");
+                          }}
+                          className="rounded-full bg-secondary px-3 py-1 text-[11px]"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          disabled={sending || !composeMsg.trim()}
+                          onClick={() => sendReview(row)}
+                          className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+                        >
+                          {sending ? "Sending…" : "Send review request"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setComposeFor(composeKey);
+                        setComposeMsg(`Hi ${displayName}, please leave a review!`);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
+                    >
+                      <Star className="h-3 w-3" /> Send review request
+                    </button>
+                  )}
+                </div>
+              )}
+              {alreadyReviewed && (
+                <p className="mt-2 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
+                  Review request already sent.
+                </p>
+              )}
+            </div>
+          );
+        })}
+        {filteredSessions.length === 0 && <Empty />}
+      </div>
     </div>
   );
 }
@@ -1576,7 +1789,9 @@ function ChangelogPanel({ password }: { password: string }) {
     setBusy(true);
     setError(null);
     try {
-      await createFn({ data: { password, kind, title: title.trim(), detail: detail.trim() || null } });
+      await createFn({
+        data: { password, kind, title: title.trim(), detail: detail.trim() || null },
+      });
       setTitle("");
       setDetail("");
       await refresh();
@@ -1668,7 +1883,8 @@ function ChangelogPanel({ password }: { password: string }) {
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Every feature, fix and improvement we've shipped. Tick the ones you want, then publish the queue — or tap a single one to push it instantly.
+          Every feature, fix and improvement we've shipped. Tick the ones you want, then publish the
+          queue — or tap a single one to push it instantly.
         </p>
 
         <div className="flex flex-wrap gap-2">
@@ -1692,9 +1908,7 @@ function ChangelogPanel({ password }: { password: string }) {
 
         {queue.size > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3">
-            <p className="text-xs font-bold">
-              {queue.size} in queue
-            </p>
+            <p className="text-xs font-bold">{queue.size} in queue</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setQueue(new Set())}
@@ -1735,7 +1949,9 @@ function ChangelogPanel({ password }: { password: string }) {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[s.kind]}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[s.kind]}`}
+                        >
                           {s.kind.toUpperCase()}
                         </span>
                         <p className="text-sm font-bold">{s.title}</p>
@@ -1771,11 +1987,14 @@ function ChangelogPanel({ password }: { password: string }) {
         )}
       </div>
 
-
-      <form onSubmit={publish} className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+      <form
+        onSubmit={publish}
+        className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4"
+      >
         <h3 className="text-sm font-black uppercase tracking-widest">Publish update</h3>
         <p className="text-xs text-muted-foreground">
-          Every visitor sees this as a dismissible popup. They can also revisit it in the "What's new" menu.
+          Every visitor sees this as a dismissible popup. They can also revisit it in the "What's
+          new" menu.
         </p>
         <div className="flex flex-wrap gap-2">
           {(["new", "fix", "improved", "soon"] as ChangelogRow["kind"][]).map((k) => (
@@ -1831,18 +2050,26 @@ function ChangelogPanel({ password }: { password: string }) {
                 className={`rounded-2xl border border-border bg-secondary/30 p-4 ${c.active ? "" : "opacity-50"}`}
               >
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[c.kind]}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[c.kind]}`}
+                  >
                     {c.kind.toUpperCase()}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
                     {new Date(c.published_at).toLocaleString()}
                   </span>
                   {!c.active && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase">Hidden</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase">
+                      Hidden
+                    </span>
                   )}
                 </div>
                 <p className="text-sm font-bold">{c.title}</p>
-                {c.detail && <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{c.detail}</p>}
+                {c.detail && (
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {c.detail}
+                  </p>
+                )}
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => toggle(c.id, !c.active)}

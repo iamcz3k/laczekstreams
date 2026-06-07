@@ -46,14 +46,20 @@ export function BroadcastOverlay() {
       const name = getPrefs().name || null;
       const r = await list({ data: { session_key: sk, name } });
       setItems(r.items as Item[]);
-    } catch {}
+    } catch {
+      // Poll again shortly; popups should not break the current page.
+    }
   }
 
   useEffect(() => {
     poll();
-    pollRef.current = window.setInterval(poll, 8000);
+    pollRef.current = window.setInterval(poll, 2000);
+    window.addEventListener("focus", poll);
+    document.addEventListener("visibilitychange", poll);
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
+      window.removeEventListener("focus", poll);
+      document.removeEventListener("visibilitychange", poll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -66,6 +72,9 @@ export function BroadcastOverlay() {
     setRating(0);
     setHoverRating(0);
     setError(null);
+    if (current?.id && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
   }, [current?.id]);
 
   if (!current) return null;

@@ -11,33 +11,43 @@ const listSchema = z.object({
   name: z.string().nullable().optional(),
 });
 
-type BroadcastRow = { id: string; kind: string; message: string; target_name: string | null; created_at: string };
+type BroadcastRow = {
+  id: string;
+  kind: string;
+  message: string;
+  target_name: string | null;
+  target_session_key?: string | null;
+  created_at: string;
+};
 
 export const listMyBroadcasts = createServerFn({ method: "POST" })
   .inputValidator((d) => listSchema.parse(d))
   .handler(async ({ data }) => {
-    // Account-age gate: visitors whose session is < 2h old never see broadcasts.
-    // This prevents pop-ups (including review prompts) firing on brand-new accounts.
     const { data: visitor } = await supabaseAdmin
       .from("visitor_sessions")
       .select("started_at")
       .eq("session_key", data.session_key)
       .maybeSingle();
-    if (!visitor?.started_at) return { items: [] as BroadcastRow[] };
-    const ageMs = Date.now() - new Date(visitor.started_at as string).getTime();
-    if (ageMs < 2 * 60 * 60 * 1000) return { items: [] as BroadcastRow[] };
 
     const { data: rows, error } = await supabaseAdmin
       .from("admin_broadcasts")
-      .select("id,kind,message,target_name,created_at")
+      .select("id,kind,message,target_name,target_session_key,created_at")
       .eq("active", true)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const trimmedName = (data.name || "").trim();
-    const eligible = (rows || []).filter(
-      (r: { target_name: string | null }) =>
-        !r.target_name || r.target_name.toLowerCase() === trimmedName.toLowerCase(),
-    );
+    const ageMs = visitor?.started_at
+      ? Date.now() - new Date(visitor.started_at as string).getTime()
+      : 0;
+    const oldEnoughForGeneralPopups = !!visitor?.started_at && ageMs >= 2 * 60 * 60 * 1000;
+    const eligible = (rows || []).filter((r: BroadcastRow) => {
+      if (r.target_session_key) {
+        if (r.target_session_key !== data.session_key) return false;
+        return r.kind === "review" ? oldEnoughForGeneralPopups : true;
+      }
+      if (!oldEnoughForGeneralPopups) return false;
+      return !r.target_name || r.target_name.toLowerCase() === trimmedName.toLowerCase();
+    });
     if (eligible.length === 0) return { items: [] as typeof eligible };
     const { data: resp } = await supabaseAdmin
       .from("admin_broadcast_responses")
@@ -87,6 +97,7 @@ export const adminCreateBroadcast = createServerFn({ method: "POST" })
       kind: "notification" | "question" | "review";
       message: string;
       target_name?: string | null;
+      target_session_key?: string | null;
     }) => {
       if (
         typeof input?.password !== "string" ||
@@ -100,12 +111,29 @@ export const adminCreateBroadcast = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    if (data.kind === "review" && data.target_session_key?.trim()) {
+      const { data: visitor, error: visitorError } = await supabaseAdmin
+        .from("visitor_sessions")
+        .select("started_at")
+        .eq("session_key", data.target_session_key.trim())
+        .maybeSingle();
+      if (visitorError) throw new Error(visitorError.message);
+      const ageMs = visitor?.started_at
+        ? Date.now() - new Date(visitor.started_at as string).getTime()
+        : 0;
+      if (ageMs < 2 * 60 * 60 * 1000) {
+        throw new Error(
+          "Review requests can only be sent to visitors who are at least 2 hours old.",
+        );
+      }
+    }
     const { data: row, error } = await supabaseAdmin
       .from("admin_broadcasts")
       .insert({
         kind: data.kind,
         message: data.message.trim(),
         target_name: data.target_name?.trim() || null,
+        target_session_key: data.target_session_key?.trim() || null,
         active: true,
       })
       .select("id")
@@ -122,10 +150,7 @@ export const adminListBroadcasts = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const [bRes, rRes] = await Promise.all([
-      supabaseAdmin
-        .from("admin_broadcasts")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabaseAdmin.from("admin_broadcasts").select("*").order("created_at", { ascending: false }),
       supabaseAdmin
         .from("admin_broadcast_responses")
         .select("*")
