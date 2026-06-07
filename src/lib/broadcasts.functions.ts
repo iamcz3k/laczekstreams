@@ -122,7 +122,9 @@ export const adminCreateBroadcast = createServerFn({ method: "POST" })
         ? Date.now() - new Date(visitor.started_at as string).getTime()
         : 0;
       if (ageMs < 2 * 60 * 60 * 1000) {
-        throw new Error("Review requests can only be sent to visitors who are at least 2 hours old.");
+        throw new Error(
+          "Review requests can only be sent to visitors who are at least 2 hours old.",
+        );
       }
     }
     const { data: row, error } = await supabaseAdmin
