@@ -41,7 +41,10 @@ export const listMyBroadcasts = createServerFn({ method: "POST" })
       : 0;
     const oldEnoughForGeneralPopups = !!visitor?.started_at && ageMs >= 2 * 60 * 60 * 1000;
     const eligible = (rows || []).filter((r: BroadcastRow) => {
-      if (r.target_session_key) return r.target_session_key === data.session_key;
+      if (r.target_session_key) {
+        if (r.target_session_key !== data.session_key) return false;
+        return r.kind === "review" ? oldEnoughForGeneralPopups : true;
+      }
       if (!oldEnoughForGeneralPopups) return false;
       return !r.target_name || r.target_name.toLowerCase() === trimmedName.toLowerCase();
     });
