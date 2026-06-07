@@ -1949,7 +1949,9 @@ function ChangelogPanel({ password }: { password: string }) {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[s.kind]}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[s.kind]}`}
+                        >
                           {s.kind.toUpperCase()}
                         </span>
                         <p className="text-sm font-bold">{s.title}</p>
@@ -1986,10 +1988,14 @@ function ChangelogPanel({ password }: { password: string }) {
       </div>
 
 
-      <form onSubmit={publish} className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4">
+      <form
+        onSubmit={publish}
+        className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4"
+      >
         <h3 className="text-sm font-black uppercase tracking-widest">Publish update</h3>
         <p className="text-xs text-muted-foreground">
-          Every visitor sees this as a dismissible popup. They can also revisit it in the "What's new" menu.
+          Every visitor sees this as a dismissible popup. They can also revisit it in the "What's
+          new" menu.
         </p>
         <div className="flex flex-wrap gap-2">
           {(["new", "fix", "improved", "soon"] as ChangelogRow["kind"][]).map((k) => (
