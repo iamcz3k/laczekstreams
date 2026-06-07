@@ -2051,18 +2051,26 @@ function ChangelogPanel({ password }: { password: string }) {
                 className={`rounded-2xl border border-border bg-secondary/30 p-4 ${c.active ? "" : "opacity-50"}`}
               >
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[c.kind]}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-black ${kindStyle[c.kind]}`}
+                  >
                     {c.kind.toUpperCase()}
                   </span>
                   <span className="text-[11px] text-muted-foreground">
                     {new Date(c.published_at).toLocaleString()}
                   </span>
                   {!c.active && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase">Hidden</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase">
+                      Hidden
+                    </span>
                   )}
                 </div>
                 <p className="text-sm font-bold">{c.title}</p>
-                {c.detail && <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{c.detail}</p>}
+                {c.detail && (
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {c.detail}
+                  </p>
+                )}
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => toggle(c.id, !c.active)}
