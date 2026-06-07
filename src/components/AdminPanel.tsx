@@ -1987,7 +1987,6 @@ function ChangelogPanel({ password }: { password: string }) {
         )}
       </div>
 
-
       <form
         onSubmit={publish}
         className="space-y-3 rounded-2xl border border-border bg-secondary/30 p-4"
