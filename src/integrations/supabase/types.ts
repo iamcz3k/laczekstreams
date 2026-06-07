@@ -63,6 +63,7 @@ export type Database = {
           kind: string
           message: string
           target_name: string | null
+          target_session_key: string | null
           updated_at: string
         }
         Insert: {
@@ -72,6 +73,7 @@ export type Database = {
           kind: string
           message: string
           target_name?: string | null
+          target_session_key?: string | null
           updated_at?: string
         }
         Update: {
@@ -81,6 +83,7 @@ export type Database = {
           kind?: string
           message?: string
           target_name?: string | null
+          target_session_key?: string | null
           updated_at?: string
         }
         Relationships: []
