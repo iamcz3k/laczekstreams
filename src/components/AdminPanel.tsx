@@ -1201,18 +1201,30 @@ function VisitorsList({
   const listBroadcasts = useServerFn(adminListBroadcasts);
   const createBroadcast = useServerFn(adminCreateBroadcast);
   const [reviewedNames, setReviewedNames] = useState<Set<string>>(new Set());
+  const [reviewedSessions, setReviewedSessions] = useState<Set<string>>(new Set());
   const [composeFor, setComposeFor] = useState<string | null>(null);
   const [composeMsg, setComposeMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [deviceFilter, setDeviceFilter] = useState("all");
+  const [contentFilter, setContentFilter] = useState<VisitorContentFilter>("all");
 
   async function refresh() {
     try {
       const r = await listBroadcasts({ data: { password } });
       const names = new Set<string>();
-      for (const b of r.broadcasts as Array<{ kind: string; target_name: string | null; active: boolean }>) {
-        if (b.kind === "review" && b.target_name) names.add(b.target_name.toLowerCase());
+      const sessionKeys = new Set<string>();
+      for (const b of r.broadcasts as Array<{
+        kind: string;
+        target_name: string | null;
+        target_session_key?: string | null;
+      }>) {
+        if (b.kind !== "review") continue;
+        if (b.target_session_key) sessionKeys.add(b.target_session_key);
+        else if (b.target_name) names.add(b.target_name.toLowerCase());
       }
       setReviewedNames(names);
+      setReviewedSessions(sessionKeys);
     } catch {}
   }
   useEffect(() => {
@@ -1220,12 +1232,20 @@ function VisitorsList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function sendReview(name: string) {
+  async function sendReview(s: Session) {
     if (!composeMsg.trim()) return;
+    const name = ((s as { name?: string | null }).name || "").trim();
+    const sessionKey = (s as { session_key?: string | null }).session_key || null;
     setSending(true);
     try {
       await createBroadcast({
-        data: { password, kind: "review", message: composeMsg.trim(), target_name: name },
+        data: {
+          password,
+          kind: "review",
+          message: composeMsg.trim(),
+          target_name: name || null,
+          target_session_key: sessionKey,
+        },
       });
       setComposeFor(null);
       setComposeMsg("");
@@ -1237,13 +1257,108 @@ function VisitorsList({
     }
   }
 
+  const countries = Array.from(
+    new Set(sessions.map((s) => ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown")),
+  ).sort();
+  const devices = Array.from(
+    new Set(sessions.map((s) => ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown")),
+  ).sort();
+  const contentTypes: VisitorContentFilter[] = [
+    "all",
+    "movie",
+    "series",
+    "live-sports",
+    "anime",
+    "cctv",
+    "radio",
+    "podcasts",
+    "other",
+  ];
+  const filteredSessions = sessions.filter((s) => {
+    const country = ((s as { country?: string | null }).country || "Unknown").trim() || "Unknown";
+    const device = ((s as { device?: string | null }).device || "Unknown").trim() || "Unknown";
+    return (
+      (countryFilter === "all" || country === countryFilter) &&
+      (deviceFilter === "all" || device === deviceFilter) &&
+      (contentFilter === "all" || contentTypeForSession(s) === contentFilter)
+    );
+  });
+  const filtersActive = countryFilter !== "all" || deviceFilter !== "all" || contentFilter !== "all";
+
+  function clearFilters() {
+    setCountryFilter("all");
+    setDeviceFilter("all");
+    setContentFilter("all");
+  }
+
   return (
-    <div className="space-y-2">
-      {sessions.map((s: any) => {
+    <div className="grid gap-3 lg:grid-cols-[230px_1fr]">
+      <aside className="rounded-2xl border border-border bg-popover p-3 lg:sticky lg:top-3 lg:self-start">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Filters</p>
+          {filtersActive && (
+            <button onClick={clearFilters} className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold">
+              All users
+            </button>
+          )}
+        </div>
+        <div className="space-y-3">
+          <label className="block text-[11px] font-bold text-muted-foreground">
+            Country
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground"
+            >
+              <option value="all">All countries</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>{country}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-[11px] font-bold text-muted-foreground">
+            Device
+            <select
+              value={deviceFilter}
+              onChange={(e) => setDeviceFilter(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-2 py-2 text-xs text-foreground"
+            >
+              <option value="all">All devices</option>
+              {devices.map((device) => (
+                <option key={device} value={device}>{device}</option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <p className="mb-2 text-[11px] font-bold text-muted-foreground">Watching / tab</p>
+            <div className="grid grid-cols-2 gap-1 lg:grid-cols-1">
+              {contentTypes.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setContentFilter(type)}
+                  className={`rounded-xl px-2 py-1.5 text-left text-[11px] font-bold ${contentFilter === type ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+                >
+                  {contentFilterLabel(type)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Showing {filteredSessions.length} of {sessions.length} visitors.
+        </p>
+      </aside>
+      <div className="space-y-2">
+      {filteredSessions.map((s: any) => {
         const online = Date.now() - new Date(s.last_seen_at).getTime() < 60_000;
         const link = streamLinkFromPath(s.current_path);
         const name = (s.name || "").trim();
-        const alreadyReviewed = !!name && reviewedNames.has(name.toLowerCase());
+        const displayName = name || "Anonymous";
+        const composeKey = s.session_key || s.id;
+        const contentType = contentTypeForSession(s);
+        const alreadyReviewed =
+          (s.session_key && reviewedSessions.has(s.session_key)) ||
+          (!!name && reviewedNames.has(name.toLowerCase()));
         return (
           <div
             key={s.id}
@@ -1263,7 +1378,7 @@ function VisitorsList({
                   <span
                     className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
                   />
-                  <span className="font-bold text-foreground">{s.name || "Anonymous"}</span>
+                  <span className="font-bold text-foreground">{displayName}</span>
                   <span className="text-muted-foreground">
                     · {s.country || "?"}
                     {s.city ? `, ${s.city}` : ""}
@@ -1273,6 +1388,9 @@ function VisitorsList({
               </div>
               <p className="text-muted-foreground">
                 {s.device} · {s.page_views} views
+                <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                  {contentFilterLabel(contentType)}
+                </span>
                 {link ? (
                   <>
                     {" "}
@@ -1282,14 +1400,14 @@ function VisitorsList({
               </p>
               <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
             </div>
-            {name && !alreadyReviewed && (
+            {!alreadyReviewed && (
               <div className="mt-2 border-t border-border/50 pt-2">
-                {composeFor === name ? (
+                {composeFor === composeKey ? (
                   <div className="space-y-2">
                     <textarea
                       value={composeMsg}
                       onChange={(e) => setComposeMsg(e.target.value)}
-                      placeholder={`Ask ${name} for a review…`}
+                      placeholder={`Ask ${displayName} for a review…`}
                       rows={2}
                       className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
                     />
@@ -1305,7 +1423,7 @@ function VisitorsList({
                       </button>
                       <button
                         disabled={sending || !composeMsg.trim()}
-                        onClick={() => sendReview(name)}
+                        onClick={() => sendReview(s)}
                         className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
                       >
                         {sending ? "Sending…" : "Send review request"}
@@ -1315,8 +1433,8 @@ function VisitorsList({
                 ) : (
                   <button
                     onClick={() => {
-                      setComposeFor(name);
-                      setComposeMsg(`Hi ${name}, please leave a review!`);
+                      setComposeFor(composeKey);
+                      setComposeMsg(`Hi ${displayName}, please leave a review!`);
                     }}
                     className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
                   >
@@ -1333,7 +1451,8 @@ function VisitorsList({
           </div>
         );
       })}
-      {sessions.length === 0 && <Empty />}
+      {filteredSessions.length === 0 && <Empty />}
+      </div>
     </div>
   );
 }
