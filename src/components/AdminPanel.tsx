@@ -52,7 +52,16 @@ import { FlagPicker } from "@/components/FlagPicker";
 type Analytics = Awaited<ReturnType<typeof adminFetchAnalytics>>;
 type Session = Analytics["sessions"][number];
 
-type Tab = "overview" | "watched" | "searches" | "visitors" | "accounts" | "daily" | "config" | "broadcasts" | "changelog";
+type Tab =
+  | "overview"
+  | "watched"
+  | "searches"
+  | "visitors"
+  | "accounts"
+  | "daily"
+  | "config"
+  | "broadcasts"
+  | "changelog";
 
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60);
@@ -74,18 +83,28 @@ function streamLinkFromPath(path?: string | null): { href: string; label: string
   return null;
 }
 
-type VisitorContentFilter = "all" | "movie" | "series" | "live-sports" | "anime" | "cctv" | "radio" | "podcasts" | "other";
+type VisitorContentFilter =
+  | "all"
+  | "movie"
+  | "series"
+  | "live-sports"
+  | "anime"
+  | "cctv"
+  | "radio"
+  | "podcasts"
+  | "other";
 
 function contentTypeForSession(s: Session): VisitorContentFilter {
   const path = String((s as { current_path?: string | null }).current_path || "").toLowerCase();
   const watched = Array.isArray((s as { watched?: unknown[] }).watched)
-    ? ((s as { watched: Array<{ kind?: string }> }).watched || [])
+    ? (s as { watched: Array<{ kind?: string }> }).watched || []
     : [];
   const latestKind = watched[0]?.kind;
   if (path.startsWith("/watch/movie/") || latestKind === "movie") return "movie";
   if (path.startsWith("/watch/tv/") || latestKind === "tv") return "series";
   if (path.startsWith("/football-stream/") || latestKind === "football") return "live-sports";
-  if (path.startsWith("/watch/anime/") || path.startsWith("/anime") || latestKind === "anime") return "anime";
+  if (path.startsWith("/watch/anime/") || path.startsWith("/anime") || latestKind === "anime")
+    return "anime";
   if (path.includes("cctv")) return "cctv";
   if (path.includes("radio")) return "radio";
   if (path.includes("podcast")) return "podcasts";
