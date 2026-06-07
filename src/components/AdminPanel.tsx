@@ -1789,7 +1789,9 @@ function ChangelogPanel({ password }: { password: string }) {
     setBusy(true);
     setError(null);
     try {
-      await createFn({ data: { password, kind, title: title.trim(), detail: detail.trim() || null } });
+      await createFn({
+        data: { password, kind, title: title.trim(), detail: detail.trim() || null },
+      });
       setTitle("");
       setDetail("");
       await refresh();
@@ -1881,7 +1883,8 @@ function ChangelogPanel({ password }: { password: string }) {
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Every feature, fix and improvement we've shipped. Tick the ones you want, then publish the queue — or tap a single one to push it instantly.
+          Every feature, fix and improvement we've shipped. Tick the ones you want, then publish the
+          queue — or tap a single one to push it instantly.
         </p>
 
         <div className="flex flex-wrap gap-2">
@@ -1905,9 +1908,7 @@ function ChangelogPanel({ password }: { password: string }) {
 
         {queue.size > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3">
-            <p className="text-xs font-bold">
-              {queue.size} in queue
-            </p>
+            <p className="text-xs font-bold">{queue.size} in queue</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setQueue(new Set())}
