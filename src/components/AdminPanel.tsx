@@ -734,6 +734,7 @@ function ConfigPanel({ password }: { password: string }) {
         if (serverFlag.description) setDefaultServerState(serverFlag.description);
       }
     } catch {
+      // Keep existing config visible if a background refresh fails.
     } finally {
       setLoading(false);
     }
@@ -1419,43 +1420,43 @@ function VisitorsList({
               key={row.id}
               className="w-full rounded-xl border border-border bg-secondary/40 p-3 text-left text-xs transition hover:border-primary"
             >
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenSession(row)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") onOpenSession(row);
-              }}
-              className="cursor-pointer"
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
-                  />
-                  <span className="font-bold text-foreground">{displayName}</span>
-                  <span className="text-muted-foreground">
-                    · {row.country || "?"}
-                    {row.city ? `, ${row.city}` : ""}
-                  </span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenSession(row)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onOpenSession(row);
+                }}
+                className="cursor-pointer"
+              >
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 rounded-full ${online ? "bg-green-500" : "bg-muted-foreground/50"}`}
+                    />
+                    <span className="font-bold text-foreground">{displayName}</span>
+                    <span className="text-muted-foreground">
+                      · {row.country || "?"}
+                      {row.city ? `, ${row.city}` : ""}
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground">{fmtDur(row.duration_seconds || 0)}</span>
                 </div>
-                <span className="text-muted-foreground">{fmtDur(row.duration_seconds || 0)}</span>
+                <p className="text-muted-foreground">
+                  {row.device} · {row.page_views} views
+                  <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                    {contentFilterLabel(contentType)}
+                  </span>
+                  {link ? (
+                    <>
+                      {" "}
+                      · watching <span className="text-primary">{link.label}</span>
+                    </>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
               </div>
-              <p className="text-muted-foreground">
-                {row.device} · {row.page_views} views
-                <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                  {contentFilterLabel(contentType)}
-                </span>
-                {link ? (
-                  <>
-                    {" "}
-                    · watching <span className="text-primary">{link.label}</span>
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
-            </div>
-            {!alreadyReviewed && (
+              {!alreadyReviewed && (
               <div className="mt-2 border-t border-border/50 pt-2">
                 {composeFor === composeKey ? (
                   <div className="space-y-2">
