@@ -134,10 +134,7 @@ export const adminListBroadcasts = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
     const [bRes, rRes] = await Promise.all([
-      supabaseAdmin
-        .from("admin_broadcasts")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabaseAdmin.from("admin_broadcasts").select("*").order("created_at", { ascending: false }),
       supabaseAdmin
         .from("admin_broadcast_responses")
         .select("*")
