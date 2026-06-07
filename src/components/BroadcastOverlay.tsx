@@ -46,7 +46,9 @@ export function BroadcastOverlay() {
       const name = getPrefs().name || null;
       const r = await list({ data: { session_key: sk, name } });
       setItems(r.items as Item[]);
-    } catch {}
+    } catch {
+      // Poll again shortly; popups should not break the current page.
+    }
   }
 
   useEffect(() => {
