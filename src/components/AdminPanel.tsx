@@ -1457,54 +1457,54 @@ function VisitorsList({
                 <p className="mt-1 text-[11px] text-muted-foreground">Tap for full activity →</p>
               </div>
               {!alreadyReviewed && (
-              <div className="mt-2 border-t border-border/50 pt-2">
-                {composeFor === composeKey ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={composeMsg}
-                      onChange={(e) => setComposeMsg(e.target.value)}
-                      placeholder={`Ask ${displayName} for a review…`}
-                      rows={2}
-                      className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setComposeFor(null);
-                          setComposeMsg("");
-                        }}
-                        className="rounded-full bg-secondary px-3 py-1 text-[11px]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        disabled={sending || !composeMsg.trim()}
-                        onClick={() => sendReview(row)}
-                        className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
-                      >
-                        {sending ? "Sending…" : "Send review request"}
-                      </button>
+                <div className="mt-2 border-t border-border/50 pt-2">
+                  {composeFor === composeKey ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={composeMsg}
+                        onChange={(e) => setComposeMsg(e.target.value)}
+                        placeholder={`Ask ${displayName} for a review…`}
+                        rows={2}
+                        className="w-full resize-none rounded-lg bg-background px-2 py-1.5 text-xs"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setComposeFor(null);
+                            setComposeMsg("");
+                          }}
+                          className="rounded-full bg-secondary px-3 py-1 text-[11px]"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          disabled={sending || !composeMsg.trim()}
+                          onClick={() => sendReview(row)}
+                          className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+                        >
+                          {sending ? "Sending…" : "Send review request"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setComposeFor(composeKey);
-                      setComposeMsg(`Hi ${displayName}, please leave a review!`);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
-                  >
-                    <Star className="h-3 w-3" /> Send review request
-                  </button>
-                )}
-              </div>
-            )}
-            {alreadyReviewed && (
-              <p className="mt-2 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
-                Review request already sent.
-              </p>
-            )}
-          </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setComposeFor(composeKey);
+                        setComposeMsg(`Hi ${displayName}, please leave a review!`);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-bold text-primary"
+                    >
+                      <Star className="h-3 w-3" /> Send review request
+                    </button>
+                  )}
+                </div>
+              )}
+              {alreadyReviewed && (
+                <p className="mt-2 border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
+                  Review request already sent.
+                </p>
+              )}
+            </div>
           );
         })}
         {filteredSessions.length === 0 && <Empty />}
