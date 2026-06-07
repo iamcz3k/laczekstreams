@@ -111,6 +111,20 @@ export const adminCreateBroadcast = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     if (data.password !== ADMIN_PASSWORD) throw new Error("Invalid admin password");
+    if (data.kind === "review" && data.target_session_key?.trim()) {
+      const { data: visitor, error: visitorError } = await supabaseAdmin
+        .from("visitor_sessions")
+        .select("started_at")
+        .eq("session_key", data.target_session_key.trim())
+        .maybeSingle();
+      if (visitorError) throw new Error(visitorError.message);
+      const ageMs = visitor?.started_at
+        ? Date.now() - new Date(visitor.started_at as string).getTime()
+        : 0;
+      if (ageMs < 2 * 60 * 60 * 1000) {
+        throw new Error("Review requests can only be sent to visitors who are at least 2 hours old.");
+      }
+    }
     const { data: row, error } = await supabaseAdmin
       .from("admin_broadcasts")
       .insert({
