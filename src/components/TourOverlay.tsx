@@ -132,22 +132,23 @@ export function TourOverlay() {
 
   return (
     <div className="fixed inset-0 z-[300]" aria-live="polite">
-      {/* Dim layer with a transparent cut-out around the target. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "rgba(0,0,0,0.72)",
-          WebkitMaskImage: cutout
-            ? `linear-gradient(#000,#000), linear-gradient(#000,#000)`
-            : undefined,
-        }}
-        onClick={close}
-      />
+      {/* Dim layer — only shown when there's no target cutout (intro/outro
+       * steps). When a cutout exists, the ring's huge box-shadow already
+       * paints the dim layer everywhere except the ring. */}
+      {!cutout && (
+        <div className="absolute inset-0 bg-black/70" onClick={close} />
+      )}
       {cutout && (
-        <div
-          className="pointer-events-none absolute rounded-2xl ring-4 ring-primary shadow-[0_0_0_9999px_rgba(0,0,0,0.72)] transition-all duration-300"
-          style={{ top: cutout.top, left: cutout.left, width: cutout.width, height: cutout.height }}
-        />
+        <>
+          <div
+            className="pointer-events-auto absolute inset-0"
+            onClick={close}
+          />
+          <div
+            className="pointer-events-none absolute rounded-2xl ring-4 ring-primary shadow-[0_0_0_9999px_rgba(0,0,0,0.72)] transition-all duration-300"
+            style={{ top: cutout.top, left: cutout.left, width: cutout.width, height: cutout.height }}
+          />
+        </>
       )}
 
       {/* Tooltip card */}
