@@ -1747,6 +1747,8 @@ type ChangelogRow = {
   title: string;
   detail: string | null;
   active: boolean;
+  image_url: string | null;
+  image_path: string | null;
   published_at: string;
 };
 
