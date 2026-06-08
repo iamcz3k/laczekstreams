@@ -1797,16 +1797,52 @@ function ChangelogPanel({ password }: { password: string }) {
     setBusy(true);
     setError(null);
     try {
+      const finalUrl = imageMode === "none" ? null : imageUrl.trim() || null;
       await createFn({
-        data: { password, kind, title: title.trim(), detail: detail.trim() || null },
+        data: {
+          password,
+          kind,
+          title: title.trim(),
+          detail: detail.trim() || null,
+          image_url: finalUrl,
+          image_path: imageMode === "upload" ? imagePath : null,
+        },
       });
       setTitle("");
       setDetail("");
+      setImageUrl("");
+      setImagePath(null);
+      setImageMode("none");
       await refresh();
     } catch (e) {
       setError((e as Error).message || "Could not publish");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80) || "image.jpg";
+      const signed = await signFn({ data: { password, filename: safe } });
+      const { supabase } = await import("@/integrations/supabase/client");
+      const up = await supabase.storage
+        .from("changelog-images")
+        .uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+      if (up.error) throw up.error;
+      setImagePath(signed.path);
+      setImageUrl(signed.publicUrl);
+    } catch (err) {
+      setError((err as Error).message || "Upload failed");
+    } finally {
+      setUploading(false);
     }
   }
 
