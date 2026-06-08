@@ -42,6 +42,7 @@ import {
   adminListChangelog,
   adminDeleteChangelog,
   adminToggleChangelog,
+  adminSignChangelogImageUpload,
 } from "@/lib/changelog-admin.functions";
 import { CHANGELOG_SUGGESTIONS } from "@/lib/changelog-suggestions";
 import { EMBED_PROVIDERS } from "@/lib/api";
