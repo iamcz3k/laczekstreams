@@ -2070,6 +2070,55 @@ function ChangelogPanel({ password }: { password: string }) {
           maxLength={2000}
           className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+
+        <div className="space-y-2 rounded-xl border border-border bg-background/40 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Preview image</span>
+            {(["none", "upload", "url"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setImageMode(m)}
+                className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                  imageMode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {m === "none" ? "No image" : m === "upload" ? "Upload" : "Paste URL"}
+              </button>
+            ))}
+          </div>
+          {imageMode === "upload" && (
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
+                disabled={uploading}
+                className="block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-primary-foreground"
+              />
+              {uploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
+            </div>
+          )}
+          {imageMode === "url" && (
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => { setImageUrl(e.target.value); setImagePath(null); }}
+              placeholder="https://example.com/preview.jpg"
+              maxLength={1024}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          )}
+          {imageMode !== "none" && imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Preview"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              className="max-h-40 w-full rounded-lg object-cover"
+            />
+          )}
+        </div>
+
         {error && <p className="text-xs text-destructive">{error}</p>}
         <button
           type="submit"
