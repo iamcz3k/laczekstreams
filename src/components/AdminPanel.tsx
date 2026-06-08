@@ -1758,6 +1758,7 @@ function ChangelogPanel({ password }: { password: string }) {
   const createFn = useServerFn(adminCreateChangelog);
   const delFn = useServerFn(adminDeleteChangelog);
   const toggleFn = useServerFn(adminToggleChangelog);
+  const signFn = useServerFn(adminSignChangelogImageUpload);
 
   const [items, setItems] = useState<ChangelogRow[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -1767,6 +1768,10 @@ function ChangelogPanel({ password }: { password: string }) {
   const [kind, setKind] = useState<ChangelogRow["kind"]>("new");
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [imageMode, setImageMode] = useState<"none" | "upload" | "url">("none");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   async function refresh(silent = false) {
     try {
