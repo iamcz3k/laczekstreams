@@ -42,6 +42,7 @@ import {
   adminListChangelog,
   adminDeleteChangelog,
   adminToggleChangelog,
+  adminSignChangelogImageUpload,
 } from "@/lib/changelog-admin.functions";
 import { CHANGELOG_SUGGESTIONS } from "@/lib/changelog-suggestions";
 import { EMBED_PROVIDERS } from "@/lib/api";
@@ -1747,6 +1748,8 @@ type ChangelogRow = {
   title: string;
   detail: string | null;
   active: boolean;
+  image_url: string | null;
+  image_path: string | null;
   published_at: string;
 };
 
@@ -1755,6 +1758,7 @@ function ChangelogPanel({ password }: { password: string }) {
   const createFn = useServerFn(adminCreateChangelog);
   const delFn = useServerFn(adminDeleteChangelog);
   const toggleFn = useServerFn(adminToggleChangelog);
+  const signFn = useServerFn(adminSignChangelogImageUpload);
 
   const [items, setItems] = useState<ChangelogRow[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -1764,6 +1768,10 @@ function ChangelogPanel({ password }: { password: string }) {
   const [kind, setKind] = useState<ChangelogRow["kind"]>("new");
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [imageMode, setImageMode] = useState<"none" | "upload" | "url">("none");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   async function refresh(silent = false) {
     try {
@@ -1789,16 +1797,52 @@ function ChangelogPanel({ password }: { password: string }) {
     setBusy(true);
     setError(null);
     try {
+      const finalUrl = imageMode === "none" ? null : imageUrl.trim() || null;
       await createFn({
-        data: { password, kind, title: title.trim(), detail: detail.trim() || null },
+        data: {
+          password,
+          kind,
+          title: title.trim(),
+          detail: detail.trim() || null,
+          image_url: finalUrl,
+          image_path: imageMode === "upload" ? imagePath : null,
+        },
       });
       setTitle("");
       setDetail("");
+      setImageUrl("");
+      setImagePath(null);
+      setImageMode("none");
       await refresh();
     } catch (e) {
       setError((e as Error).message || "Could not publish");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80) || "image.jpg";
+      const signed = await signFn({ data: { password, filename: safe } });
+      const { supabase } = await import("@/integrations/supabase/client");
+      const up = await supabase.storage
+        .from("changelog-images")
+        .uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+      if (up.error) throw up.error;
+      setImagePath(signed.path);
+      setImageUrl(signed.publicUrl);
+    } catch (err) {
+      setError((err as Error).message || "Upload failed");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -2026,6 +2070,55 @@ function ChangelogPanel({ password }: { password: string }) {
           maxLength={2000}
           className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+
+        <div className="space-y-2 rounded-xl border border-border bg-background/40 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Preview image</span>
+            {(["none", "upload", "url"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setImageMode(m)}
+                className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                  imageMode === m ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {m === "none" ? "No image" : m === "upload" ? "Upload" : "Paste URL"}
+              </button>
+            ))}
+          </div>
+          {imageMode === "upload" && (
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
+                disabled={uploading}
+                className="block w-full text-xs file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-[11px] file:font-bold file:text-primary-foreground"
+              />
+              {uploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
+            </div>
+          )}
+          {imageMode === "url" && (
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => { setImageUrl(e.target.value); setImagePath(null); }}
+              placeholder="https://example.com/preview.jpg"
+              maxLength={1024}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          )}
+          {imageMode !== "none" && imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Preview"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              className="max-h-40 w-full rounded-lg object-cover"
+            />
+          )}
+        </div>
+
         {error && <p className="text-xs text-destructive">{error}</p>}
         <button
           type="submit"

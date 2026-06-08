@@ -19,6 +19,7 @@ import {
   Shuffle,
   Smartphone,
   Sparkles,
+  Play,
   Trash2,
   Users,
   X,
@@ -187,6 +188,7 @@ export function MoreMenu({ onPicked }: { onPicked?: () => void }) {
 
             <Group label="More">
               <Row icon={ListChecks} onClick={() => { setOpen(false); setShowChangelog(true); }}>What's new</Row>
+              <Row icon={Play} onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent("laczek:tour:start")); }}>Preview · Take a tour</Row>
               <Row icon={Send} onClick={openUpdates}>Updates · Telegram</Row>
               <Row icon={Smartphone} onClick={installApp}>{canInstall ? "Install app" : "Install app / APK"}</Row>
               <Row icon={Users} onClick={goParty}>Watch Party</Row>

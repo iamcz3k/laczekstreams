@@ -54,12 +54,13 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
             <button
               onClick={surprise}
               disabled={busy}
+              data-tour="surprise-me"
               className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition active:scale-95 disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
               Surprise me
             </button>
-            <MoreMenu />
+            <span data-tour="more-menu"><MoreMenu /></span>
           </div>
         </div>
         <nav className="-mx-3 flex max-w-full items-center gap-1 overflow-x-auto px-3 pb-1 lg:order-2 lg:mx-0 lg:rounded-full lg:glass lg:p-1 lg:shadow-[inset_0_1px_0_color-mix(in_oklab,white_8%,transparent)]">
@@ -70,6 +71,7 @@ export function Header({ active, onChange }: { active: TabKey; onChange: (k: Tab
               <button
                 key={t.key}
                 onClick={() => onChange(t.key)}
+                data-tour={`tab-${t.key}`}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition-all duration-300 active:scale-95 sm:gap-2 sm:px-4 sm:text-sm ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"

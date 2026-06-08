@@ -8,6 +8,7 @@ type Item = {
   kind: "new" | "fix" | "improved" | "soon";
   title: string;
   detail: string | null;
+  image_url?: string | null;
   published_at: string;
 };
 
@@ -105,19 +106,30 @@ export function ChangelogOverlay() {
           {unseen.map((c) => {
             const style = KIND_STYLES[c.kind] ?? KIND_STYLES.new;
             return (
-              <div key={c.id} className="rounded-2xl border border-border bg-secondary/40 p-4">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${style.cls}`}>
-                    {style.label}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {new Date(c.published_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm font-bold">{c.title}</p>
-                {c.detail && (
-                  <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{c.detail}</p>
+              <div key={c.id} className="overflow-hidden rounded-2xl border border-border bg-secondary/40">
+                {c.image_url && (
+                  <img
+                    src={c.image_url}
+                    alt=""
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    className="block max-h-64 w-full object-cover"
+                  />
                 )}
+                <div className="p-4">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${style.cls}`}>
+                      {style.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {new Date(c.published_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold">{c.title}</p>
+                  {c.detail && (
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{c.detail}</p>
+                  )}
+                </div>
               </div>
             );
           })}

@@ -23,6 +23,7 @@ import { Route as AnimeAnimeIdRouteImport } from './routes/anime.$animeId'
 import { Route as WatchKindIdRouteImport } from './routes/watch.$kind.$id'
 import { Route as ApiPublicPodcastFeedRouteImport } from './routes/api.public.podcast-feed'
 import { Route as ApiPublicFootballStreamsRouteImport } from './routes/api.public.football-streams'
+import { Route as ApiPublicChangelogImageRouteImport } from './routes/api.public.changelog-image'
 import { Route as ApiPublicCctvCamerasRouteImport } from './routes/api.public.cctv-cameras'
 import { Route as ApiPublicAnimeVideoRouteImport } from './routes/api.public.anime-video'
 import { Route as ApiPublicAnimeProxyRouteImport } from './routes/api.public.anime-proxy'
@@ -100,6 +101,11 @@ const ApiPublicFootballStreamsRoute =
     path: '/api/public/football-streams',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicChangelogImageRoute = ApiPublicChangelogImageRouteImport.update({
+  id: '/api/public/changelog-image',
+  path: '/api/public/changelog-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCctvCamerasRoute = ApiPublicCctvCamerasRouteImport.update({
   id: '/api/public/cctv-cameras',
   path: '/api/public/cctv-cameras',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/api/public/anime-proxy': typeof ApiPublicAnimeProxyRoute
   '/api/public/anime-video': typeof ApiPublicAnimeVideoRoute
   '/api/public/cctv-cameras': typeof ApiPublicCctvCamerasRoute
+  '/api/public/changelog-image': typeof ApiPublicChangelogImageRoute
   '/api/public/football-streams': typeof ApiPublicFootballStreamsRoute
   '/api/public/podcast-feed': typeof ApiPublicPodcastFeedRoute
   '/watch/$kind/$id': typeof WatchKindIdRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
+    | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
+    | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/api/public/anime-proxy'
     | '/api/public/anime-video'
     | '/api/public/cctv-cameras'
+    | '/api/public/changelog-image'
     | '/api/public/football-streams'
     | '/api/public/podcast-feed'
     | '/watch/$kind/$id'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   ApiPublicAnimeProxyRoute: typeof ApiPublicAnimeProxyRoute
   ApiPublicAnimeVideoRoute: typeof ApiPublicAnimeVideoRoute
   ApiPublicCctvCamerasRoute: typeof ApiPublicCctvCamerasRoute
+  ApiPublicChangelogImageRoute: typeof ApiPublicChangelogImageRoute
   ApiPublicFootballStreamsRoute: typeof ApiPublicFootballStreamsRoute
   ApiPublicPodcastFeedRoute: typeof ApiPublicPodcastFeedRoute
   WatchKindIdRoute: typeof WatchKindIdRoute
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFootballStreamsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/changelog-image': {
+      id: '/api/public/changelog-image'
+      path: '/api/public/changelog-image'
+      fullPath: '/api/public/changelog-image'
+      preLoaderRoute: typeof ApiPublicChangelogImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cctv-cameras': {
       id: '/api/public/cctv-cameras'
       path: '/api/public/cctv-cameras'
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAnimeProxyRoute: ApiPublicAnimeProxyRoute,
   ApiPublicAnimeVideoRoute: ApiPublicAnimeVideoRoute,
   ApiPublicCctvCamerasRoute: ApiPublicCctvCamerasRoute,
+  ApiPublicChangelogImageRoute: ApiPublicChangelogImageRoute,
   ApiPublicFootballStreamsRoute: ApiPublicFootballStreamsRoute,
   ApiPublicPodcastFeedRoute: ApiPublicPodcastFeedRoute,
   WatchKindIdRoute: WatchKindIdRoute,

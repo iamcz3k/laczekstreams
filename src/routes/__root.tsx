@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { useEffect, useState } from "react";
 import { BroadcastOverlay } from "@/components/BroadcastOverlay";
 import { ChangelogOverlay } from "@/components/ChangelogOverlay";
+import { TourOverlay } from "@/components/TourOverlay";
 
 import appCss from "../styles.css?url";
 
@@ -50,7 +51,7 @@ export const Route = createRootRoute({
       { property: "og:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@laczekstream" },
       { name: "twitter:title", content: "LACZEK STREAM — Free Movies, TV, Football & Music" },
       { name: "twitter:description", content: "LACZEK STREAM: stream free movies, live TV, football and music — sleek, clean, no ads." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ff1d4406-0346-47ec-9265-4c87ecf2d141/id-preview-1615ea0b--aa00440a-8748-4fa2-aefa-2305913f75e2.lovable.app-1777046110384.png" },
@@ -163,6 +164,7 @@ function RootComponent() {
       <Outlet />
       <BroadcastOverlay />
       <ChangelogOverlay />
+      <TourOverlay />
       {alert && (
         <div className="fixed bottom-4 left-1/2 z-[200] w-[92%] max-w-md -translate-x-1/2 rounded-2xl border border-primary/40 bg-primary text-primary-foreground shadow-2xl">
           <a href={alert.url} className="flex items-center justify-between gap-3 px-4 py-3">
