@@ -23,7 +23,7 @@ const createSchema = z.object({
   kind: z.enum(KINDS),
   title: z.string().min(1).max(120),
   detail: z.string().max(2000).optional().nullable(),
-  image_url: z.string().max(1024).url().optional().nullable(),
+  image_url: z.string().min(1).max(1024).optional().nullable(),
   image_path: z.string().max(512).regex(/^[a-zA-Z0-9._/-]+$/).optional().nullable(),
 });
 
