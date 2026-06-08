@@ -1,67 +1,46 @@
-## Goal
-Production-ready offline download system for movies, series, and anime files hosted in Lovable Cloud Storage, with a modern Downloads Manager UI.
+## What to change
 
-## Phase 1 — Stabilize (required before feature work)
-1. Generate proper DB schema (Phase 2 migration) so types regenerate and ~60 TS errors in `admin.functions.ts`, `tracker.functions.ts`, `feature-flags.ts`, `AdminPanel.tsx`, `MatchChat.tsx` resolve.
-2. Fix runtime crash in `tracker.functions.ts:31` (null `id` on insert) — guard with `.maybeSingle()` + early return.
+### 1. Metadata cleanup (tiny)
+The site title/branding is already "LACZEK STREAM" everywhere. Only stray "Lovable" reference is `twitter:site: "@Lovable"` in `src/routes/__root.tsx` — change it to `@laczekstream`. No favicon changes (keeping existing icons as requested).
 
-## Phase 2 — Backend (Lovable Cloud)
-**Storage bucket:** `downloads` (private, signed URLs only, 5GB file limit).
-**Tables:**
-- `downloadable_titles` — admin-uploaded catalogue: `id, kind (movie|tv|anime), tmdb_id, title, season, episode, storage_path, size_bytes, mime, poster_url, created_at`. Public read.
-- `user_downloads` — per-user record: `user_id, title_id, status, started_at, completed_at`. RLS: own rows only. Used to prevent duplicates across devices and surface "previously downloaded".
-- Also fixes: `feature_flags`, `featured_events`, `visitor_sessions`, `match_chats` (the tables existing code already references).
+### 2. Announcement images (admin uploads + URL)
 
-**Server functions:**
-- `getSignedDownloadUrl(titleId)` — auth-required, returns a 1-hour signed URL to the storage object.
-- `listDownloadableTitles(kind?, tmdbId?)` — public catalogue lookup, used by Title page to decide if a Download button shows.
-- `recordUserDownload`, `markDownloadComplete`, `removeUserDownload`.
+**DB migration** — add columns to `admin_changelog`:
+- `image_url TEXT` — public URL of the preview pic (nullable)
+- `image_path TEXT` — storage path for uploaded files (nullable, so we can delete from storage on row delete)
 
-**Admin upload:** extend AdminPanel with an "Upload video" form (file picker → storage upload → `downloadable_titles` insert) so you have a path to add content. Source: you supply the MP4s (legal way to "find" files).
+**Storage** — create a new public bucket `changelog-images` with admin-only write policy (signed via existing `czek2991` admin password through a server function — same pattern as existing admin storage signing route).
 
-## Phase 3 — Web / PWA Download Engine
-`src/lib/downloads/` module:
-- **Storage:** IndexedDB (videos as Blobs in object store `files`, metadata in `meta`). One DB, versioned.
-- **Engine:** `fetch()` with HTTP `Range` requests in 4MB chunks → append to Blob. Enables pause / resume / retry / cancel and survives tab reloads (resume from last byte offset stored in metadata).
-- **Queue:** max 2 concurrent, FIFO, persisted.
-- **Progress:** EventTarget emitting `{ id, loaded, total, speedBps, etaSec, status }`. Speed = EWMA over last 5s.
-- **Quota check:** `navigator.storage.estimate()` before enqueue; warn if file > free quota; request `navigator.storage.persist()` so OS doesn't evict.
-- **Duplicate prevention:** check IndexedDB `meta` + `user_downloads` table.
-- **Network resilience:** `online`/`offline` listeners auto-pause and auto-resume; exponential backoff on fetch errors (3 retries → "Retry" button).
-- **Playback offline:** `URL.createObjectURL(blob)` fed into existing `HlsPlayer`/`<video>`.
+**Server functions** (`src/lib/changelog-admin.functions.ts`):
+- Extend `adminCreateChangelog` to accept optional `image_url` + `image_path`.
+- Add `adminSignChangelogUpload` returning a signed upload URL for the bucket (reuse pattern from `api.public.admin-storage-sign.ts`).
+- Extend `listChangelog` to return `image_url`.
 
-## Phase 4 — Native (Android + iOS via Capacitor)
-- Add `@capacitor/core`, `@capacitor/filesystem`, `@capacitor/network`, `capacitor.config.ts` (don't run native build here — that requires a local Android Studio / Xcode).
-- `downloads/native-adapter.ts`: when `Capacitor.isNativePlatform()`, write chunks via `Filesystem.appendFile` into `Directory.Data` (private app storage, not user-deletable Downloads folder, so files stay tied to the app). Offline playback uses `Capacitor.convertFileSrc(path)`.
-- README section explaining how to run `npx cap add android && npx cap sync` after exporting to GitHub.
+**Admin UI** (`src/components/AdminPanel.tsx` ChangelogPanel):
+- New "Image" row in the compose form with two tabs: "Upload" (file picker → signed upload → store path+public URL) and "Paste URL" (plain input).
+- Show thumbnail preview before publish.
 
-## Phase 5 — UI
-- **`DownloadsTab.tsx`** (new tab next to Library): grouped by status (Downloading / Paused / Completed / Failed), per-item card with poster, title, progress bar, speed, ETA, size, action buttons (pause/resume/retry/cancel/delete/play).
-- **Storage meter** at top: used / available / quota, with "Free up space".
-- **`useDownload(titleId)` hook** for buttons; **Download button** added to `TitleDetails` (only when title is in `downloadable_titles`).
-- Toast notifications on complete / fail via existing sonner.
-- Add `/downloads` route + nav entry.
+**User UI** (`src/components/ChangelogOverlay.tsx`):
+- Render `image_url` as a rounded preview image above the title when present, with `loading="lazy"` and a fallback that hides the `<img>` on error.
 
-## Phase 6 — PWA polish
-Manifest already exists. Add `navigator.storage.persist()` request on first download. No service worker for offline (kept out per PWA guidance — IndexedDB blobs are enough).
+### 3. Guided tour ("Preview") — full coverage per tab
 
-## Technical notes
-- All Supabase storage URLs are signed and short-lived; tokens never sit in IndexedDB.
-- Downloads stream chunk-by-chunk so a 4GB movie never lives twice in RAM.
-- Cancelling deletes the partial blob + meta row immediately.
-- "Find a way" for catalogue: only files YOU upload to the bucket can be downloaded. The streaming catalogue (TMDB/iframes) stays as-is for online viewing; downloadable items are a curated subset surfaced via `downloadable_titles`.
+**New library** `src/lib/tour/`:
+- `types.ts` — `TourStep = { target: string (CSS selector or data-tour key); title: string; body: string; placement?: "auto"|"top"|"bottom"|"left"|"right"; action?: "click"|"none"; route?: string }`.
+- `tours.ts` — registry keyed by route + global. Tours for: home (`/`) tabs (Movies, TV, Live Sports, YouTube, CCTV, Radio, Podcasts), More menu, Surprise me, Search, Watch page (`/watch/...`: server switch, next episode, fullscreen, download), Downloads, Radio, Podcasts, Live Sports / Match chat, Speedtest, Party, Anime, Library/Genres. Each step uses `[data-tour="key"]` selectors.
+- `TourProvider.tsx` — context + overlay component. Highlights the target with a cut-out spotlight (full-screen dark overlay with a transparent rounded rectangle around target rect), shows a tooltip card ("Next button — tap this to go to the next episode…"), Next / Back / Skip controls, auto-scrolls target into view, repositions on resize.
+- Auto-advances to the next route when a step has `route` set.
+
+**Wire-up**:
+- Mount `<TourProvider />` inside `__root.tsx` (alongside `BroadcastOverlay`).
+- Add `data-tour="..."` attributes to the relevant elements (tabs in `Header.tsx`, More menu items, Surprise Me, MediaCard, player controls in `IframePlayer`/`HlsPlayer`/`watch.$kind.$id.tsx`, Downloads buttons, etc.).
+- `MoreMenu.tsx` gets a new "Take a tour" item that opens the tour for the current route (or the global home tour).
+
+### 4. No business-logic changes elsewhere — review delivery, 2-hour gate, TV mode etc. all stay as-is.
 
 ## Out of scope
-- DRM (Widevine/FairPlay) — not possible without studio licensing.
-- Saving to the user-visible system Downloads folder on iOS (Apple sandbox forbids it).
-- Building/signing the native APK/IPA (requires your machine).
+- Translating tour copy
+- Persisting "tour completed" per user (we'll just remember in `localStorage` so it doesn't auto-replay)
+- Mobile-optimised special variant of spotlight (single responsive tooltip is enough)
 
-## File map (new)
-- `supabase/migrations/<ts>_downloads_and_tracking.sql`
-- `src/lib/downloads/{engine.ts,db.ts,types.ts,native-adapter.ts,index.ts}`
-- `src/lib/downloads.functions.ts`
-- `src/hooks/useDownload.ts`, `src/hooks/useDownloadsList.ts`
-- `src/components/DownloadsTab.tsx`, `src/components/DownloadButton.tsx`, `src/components/StorageMeter.tsx`
-- `src/routes/downloads.tsx`
-- `src/components/admin/UploadVideoForm.tsx` (added inside AdminPanel)
-- `capacitor.config.ts` + README section
+Ready to build?
